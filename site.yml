@@ -1,0 +1,92 @@
+---
+- hosts: localhost
+  connection: local
+
+  vars:
+    rstudio_version: 0.99.422
+
+  roles:
+    - role: nuada.dockerize
+      timezone: "Europe/Warsaw"
+
+  tasks:
+    - name: group omicron
+      group: name=omicron gid=1000
+
+    - name: default user
+      user: name=omicron uid=1000 group=omicron groups=sudo shell=/bin/bash
+
+    - name: ssh dir
+      file: path=/home/omicron/.ssh state=directory
+         owner=omicron group=omicron mode=0700
+
+    - name: allow omicron user to use passwordless sudo
+      copy: dest=/etc/sudoers.d/90-omicron content="omicron ALL=(ALL) NOPASSWD:ALL"
+        owner=root group=root mode=0440
+
+    - name: install packages
+      apt: name={{ item }}
+      with_items:
+        - bsdmainutils
+        - build-essential
+        - byobu
+        - curl
+        - git
+        - ipython
+        - lbzip2
+        - openjdk-7-jre-headless
+        - python-dev
+        - python-pip
+        - python-pip
+        - python-pandas
+        - r-base
+        - r-base-dev
+        - psmisc
+        - plink
+        - unzip
+        - vcftools
+        - vim
+        - wget
+        - zlib1g-dev
+
+    - name: create temp dir
+      file: path=/tmp/ansible state=directory
+
+    # Install bcftools
+    - git: repo=git://github.com/samtools/htslib.git dest=/tmp/ansible/htslib accept_hostkey=yes
+    - git: repo=git://github.com/samtools/bcftools.git dest=/tmp/ansible/bcftools accept_hostkey=yes
+    - shell: make -j{{ ansible_processor_vcpus }} chdir=/tmp/ansible/htslib
+    - shell: make -j{{ ansible_processor_vcpus }} && mv bcftools /usr/bin chdir=/tmp/ansible/bcftools
+
+    - name: install plink2
+    - shell: wget "https://www.cog-genomics.org$(curl -s https://www.cog-genomics.org/plink2/ | grep -Eo '/static/bin/plink[0-9]{6}/plink_linux_x86_64.zip')" &&
+        unzip plink_linux_x86_64.zip && mv plink /usr/bin chdir=/tmp/ansible
+
+    - name: download RStudio Server
+      get_url:
+        url="http://download2.rstudio.org/rstudio-server-{{ rstudio_version }}-amd64.deb"
+        dest="/tmp/ansible/rstudio-server-{{ rstudio_version }}-amd64.deb"
+
+    - name: install RStudio Server
+      apt: deb="/tmp/ansible/rstudio-server-{{ rstudio_version }}-amd64.deb"
+
+    - name: install king
+      shell: curl http://people.virginia.edu/~wc9c/KING/Linux-king.tar.gz | tar zx -C /usr/bin
+
+    - name: install EIGENSTAT
+      shell: curl https://codeload.github.com/DReichLab/EIG/tar.gz/master | tar zx -C /usr/bin --wildcards '*/bin/*' --strip-components=2
+
+    - name: install impute2
+      shell: curl https://mathgen.stats.ox.ac.uk/impute/impute_v2.3.2_x86_64_dynamic.tgz | tar zx -C /usr/bin --wildcards '*/impute2' --strip-components=1
+
+    - name: install gtool
+      shell: curl http://www.well.ox.ac.uk/~cfreeman/software/gwas/gtool_v0.7.5_x86_64_dynamic.tgz | tar zx -C /usr/bin gtool
+
+    - name: install snptest
+      shell: curl http://www.well.ox.ac.uk/~gav/resources/snptest_v2.5.1_linux_x86_64_dynamic.tgz | tar zx -C /usr/bin --wildcards '*/snptest*' --strip-components=1
+
+    - name: install qctool
+      shell: curl http://www.well.ox.ac.uk/~gav/qctool/resources/qctool_v1.4-linux-x86_64.tgz | tar zx -C /usr/bin --wildcards '*/qctool' --strip-components=1
+
+    - name: cleanup temp
+      file: path=/tmp/ansible state=absent
