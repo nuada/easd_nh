@@ -18,6 +18,7 @@ samples.run = samples.run.astype('int')
 samples.row = samples.row.astype('int')
 samples.column = samples.column.astype('int')
 samples.plate_column = samples.plate_column.astype('int')
+samples.sample_id = samples.sample_id.map(lambda s: s.strip().upper().replace(' ', ''))
 
 for idx, row in samples.sort(['run', 'array', 'row', 'column']).iterrows():
 	d = row.to_dict()
