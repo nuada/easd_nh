@@ -4,7 +4,6 @@
 # usage: python $0 samples.csv | cat header.csv - > sample_sheet.csv
 
 import pandas as pd
-import numpy
 import sys
 import string
 
