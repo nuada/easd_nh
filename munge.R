@@ -269,8 +269,9 @@ bmi_xcheck$diff <- bmi_xcheck$BMI_AT_CLINICAL_EXAM-bmi_xcheck$BMI_CALCULATED
 bmi_xcheck[order(bmi_xcheck$diff, decreasing = T),]
 qplot(SAMPLE_ID, value, data=melt(bmi_xcheck, id.vars=c(1,4)), color=variable, geom='linerange') + coord_flip()
 
+# TODO remove when phenotype information is compelete!
 # Write merged table
-write.xlsx(phenotype, 'data/phenotype_merged.xlsx', col.names=T, row.names = F, showNA = F)
+# write.xlsx(phenotype, 'data/phenotype_merged.xlsx', col.names=T, row.names = F, showNA = F)
 
 # Expected table columns
 columns_final <- c(
@@ -290,11 +291,14 @@ columns_final <- c(
   'INSULIN_START_AGE'     # [years]
 )
 
-# Write expected table
 phenotype_final <- subset(phenotype, select=columns_final)
-write.xlsx(phenotype_final, 'data/phenotype.xlsx', col.names=T, row.names = F, showNA = F)
 
+# TODO remove when phenotype information is compelete!
+# Write expected table
+# write.xlsx(phenotype_final, 'data/phenotype.xlsx', col.names=T, row.names = F, showNA = F)
+
+# TODO remove when phenotype information is compelete!
 # Split by country
-for (part in split(phenotype_final, phenotype_final$COUNTRY))
-  write.xlsx(part, paste0('data/phenotype_', part$COUNTRY[1], '.xlsx'), col.names=T, row.names = F, showNA = F)
+# for (part in split(phenotype_final, phenotype_final$COUNTRY))
+#   write.xlsx(part, paste0('data/phenotype_', part$COUNTRY[1], '.xlsx'), col.names=T, row.names = F, showNA = F)
 
