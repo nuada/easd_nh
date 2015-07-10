@@ -305,3 +305,13 @@ phenotype_final <- subset(phenotype, select=columns_final)
 # for (part in split(phenotype_final, phenotype_final$COUNTRY))
 #   write.xlsx(part, paste0('data/phenotype_', part$COUNTRY[1], '.xlsx'), col.names=T, row.names = F, showNA = F)
 
+sample_sheet <- read.csv('data/sample_sheet/sample_sheet.csv', skip=10)
+sample_sheet <- subset(sample_sheet, select=1:6)
+names(sample_sheet) <- c('OMICRON_ID', 'SAMPLE_ID', 'PLATE', 'WELL', 'ARRAY_ID', 'ARRAY_POSITION')
+phenotype_and_sample_sheet <- unique(merge(sample_sheet, phenotype_final, by='SAMPLE_ID', all.x=T))
+
+# Drop phenotypes without sex - they are useless
+phenotype_and_sample_sheet <- subset(phenotype_and_sample_sheet, !is.na(SEX_PLINK))
+write.table(phenotype_and_sample_sheet, 'data/phenotype.csv', row.names = F, na = '', quote = F, sep='\t')
+
+plot(phenotype_and_sample_sheet[,c(9:16, 18)])
