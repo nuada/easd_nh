@@ -84,13 +84,13 @@ columns_sk <- list(
   c('AGE_AT_CLINICAL_EXAM',           'numeric'),
   c('HEIGHT',                         'numeric'),
   c('WEIGHT',                         'numeric'),
-  c('BMI',                            'numeric'),
+  c('BMI_AT_CLINICAL_EXAM',           'numeric'),
   c('MUTATION_AA_CHANGE',             'character'),
   c('EXON_NO',                        'numeric'),
   c('MUTATION_CODING',                'character'),
   c('MUTATION_INHERITANCE',           'character'),
   c('MUTATION_INHERITANCE_CONFIRMED', 'character'), # 'Not ...' <- False
-  c('DIAGNOSIS',                      'numeric'),
+  c('INSULIN_START_AGE',              'numeric'),
   c('THERAPY_AT_DIAGNOSIS',           'character'),
   c('THERAPY_AT_REFERRAL',            'character')
 )
@@ -102,8 +102,6 @@ phenotype_sk <- read.xlsx('data/phenotype/ClinicalDatabase-Slovakia_MS_27022015.
                           na.strings='N/A')
 names(phenotype_sk) <- sapply(columns_sk, function(c)c[1])
 phenotype_sk$COUNTRY <- 'SK'
-
-phenotype_sk <- subset(phenotype_sk, select=-DIAGNOSIS)
 
 phenotype_sk$SAMPLE_ID <- sub(' ', '', phenotype_sk$SAMPLE_ID, fixed=T)
 
@@ -118,7 +116,7 @@ columns_uk <- list(
   c('SEX',                     'character'),
   c('DOB',                     'Date'),
   c('AGE_AT_DIAGNOSIS',        'numeric'),
-  c('AGE_AT_REFERRAL',         'numeric'),
+  c('AGE_AT_CLINICAL_EXAM',    'numeric'),
   c('STATUS',                  'character'),
   c('RELATIONSHIP_TO_PROBAND', 'character'),
   c('THERAPY_AT_DIAGNOSIS',    'character'), # Common dictionary
@@ -134,7 +132,7 @@ columns_uk <- list(
   c('GENE_NAME',               'character'),
   c('HEIGHT',                  'numeric'),   # Convert to cm
   c('WEIGHT',                  'numeric'), 
-  c('BMI',                     'numeric'),
+  c('BMI_AT_CLINICAL_EXAM',    'numeric'),
   c('MOTHER_MUTATION',         'character'),
   c('FATHER_MUTATION',         'character'),
   c('MOTHER_DM',               'character'), # Convert to logical
@@ -179,7 +177,7 @@ columns_us <- list(
   c('AGE_AT_CLINICAL_EXAM', 'numeric'),
   c('HEIGHT',               'numeric'),
   c('WEIGHT',               'numeric'), 
-  c('BMI',                  'numeric'),
+  c('BMI_AT_CLINICAL_EXAM', 'numeric'),
   c('MUTATION_INHERITANCE', 'character'),
   c('MUTATION_AA_CHANGE',   'character'),
   c('THERAPY',              'character'), # Common dictionary
@@ -198,8 +196,8 @@ phenotype <- data.frame(
   AGE = numeric(),
   AGE_AT_CLINICAL_EXAM = numeric(),
   AGE_AT_DIAGNOSIS = numeric(),
-  AGE_AT_REFERRAL = numeric(),
-  BMI = numeric(),
+  AGE_AT_CLINICAL_EXAM = numeric(),
+  BMI_AT_CLINICAL_EXAM = numeric(),
   BMI_AT_DIAGNOSIS = numeric(),
   COUNTRY = character(),
   DOB = as.Date(character()),
@@ -263,7 +261,13 @@ phenotype$MUTATION_INHERITANCE <- toupper(substr(trimws(phenotype$MUTATION_INHER
 phenotype$MUTATION_INHERITANCE[phenotype$MUTATION_INHERITANCE == 'P'] <- 'F'
 phenotype$MUTATION_INHERITANCE <- factor(phenotype$MUTATION_INHERITANCE, labels = c('Both parents', 'De novo', 'Father', 'Mother'))
 
-# TODO can we infer INSULIN_START_AGE?
+library(reshape2)
+library(ggplot2)
+phenotype$BMI_CALCULATED <- phenotype$WEIGHT/((phenotype$HEIGHT/100)^2)
+bmi_xcheck <- subset(phenotype, BMI_AT_CLINICAL_EXAM > BMI_CALCULATED+0.2 | BMI_AT_CLINICAL_EXAM < BMI_CALCULATED-0.2)[,c('SAMPLE_ID', 'BMI_AT_CLINICAL_EXAM', 'BMI_CALCULATED')]
+bmi_xcheck$diff <- bmi_xcheck$BMI_AT_CLINICAL_EXAM-bmi_xcheck$BMI_CALCULATED
+bmi_xcheck[order(bmi_xcheck$diff, decreasing = T),]
+qplot(SAMPLE_ID, value, data=melt(bmi_xcheck, id.vars=c(1,4)), color=variable, geom='linerange') + coord_flip()
 
 # Write merged table
 write.xlsx(phenotype, 'data/phenotype_merged.xlsx', col.names=T, row.names = F, showNA = F)
@@ -280,7 +284,7 @@ columns_final <- c(
   'AGE_AT_CLINICAL_EXAM', # [years]
   'HEIGHT',               # [cm]
   'WEIGHT',               # [kg]
-  'BMI',                  # QTL
+  'BMI_AT_CLINICAL_EXAM',
   'MUTATION_AA_CHANGE',   # HGVS protein notation with transcript ID
   'MUTATION_INHERITANCE', # Both parents, De novo, Father, Mother
   'INSULIN_START_AGE'     # [years]
