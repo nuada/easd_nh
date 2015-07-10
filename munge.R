@@ -110,6 +110,9 @@ phenotype_sk$MUTATION_INHERITANCE_CONFIRMED <- as.logical(phenotype_sk$MUTATION_
 
 phenotype_sk$EXON <- T
 
+# Obvious typo
+phenotype_sk$DOB[phenotype_sk$SAMPLE_ID == 'P350'] <- 1981
+
 # UK - United Kingdom
 columns_uk <- list(
   c('SAMPLE_ID',               'character'), # extract FAMILY_ID
