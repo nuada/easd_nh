@@ -270,7 +270,7 @@ phenotype$BMI_CALCULATED <- phenotype$WEIGHT/((phenotype$HEIGHT/100)^2)
 bmi_xcheck <- subset(phenotype, BMI_AT_CLINICAL_EXAM > BMI_CALCULATED+0.2 | BMI_AT_CLINICAL_EXAM < BMI_CALCULATED-0.2)[,c('SAMPLE_ID', 'BMI_AT_CLINICAL_EXAM', 'BMI_CALCULATED')]
 bmi_xcheck$diff <- bmi_xcheck$BMI_AT_CLINICAL_EXAM-bmi_xcheck$BMI_CALCULATED
 bmi_xcheck[order(bmi_xcheck$diff, decreasing = T),]
-qplot(SAMPLE_ID, value, data=melt(bmi_xcheck, id.vars=c(1,4)), color=variable, geom='linerange') + coord_flip()
+qplot(SAMPLE_ID, value, data=melt(bmi_xcheck, id.vars=c(1,4)), color=variable) + coord_flip()
 
 # TODO remove when phenotype information is compelete!
 # Write merged table
