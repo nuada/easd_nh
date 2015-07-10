@@ -251,7 +251,7 @@ phenotype$SEX[phenotype$SEX == 'M'] <- 'Male'
 phenotype$SEX[phenotype$SEX == '0'] <- 'Female'
 phenotype$SEX[phenotype$SEX == '1'] <- 'Male'
 phenotype$SEX <- factor(phenotype$SEX, levels=c('Male', 'Female'))
-phenotype$PLINK_SEX <- as.numeric(phenotype$SEX)
+phenotype$SEX_PLINK <- as.numeric(phenotype$SEX)
 
 library(lubridate)
 phenotype$DOB_YEAR <- year(phenotype$DOB)
@@ -282,7 +282,7 @@ columns_final <- c(
   'FAMILY_ID',
   'SAMPLE_ID',
   'SEX',                  # Female, Male
-  'PLINK_SEX',            # Plink coded (1=male, 2=female) SEX
+  'SEX_PLINK',            # Plink coded (1=male, 2=female) SEX field
   'DOB_YEAR',             # Date of birth, year
   'AGE_AT_DIAGNOSIS',     # [years]
   'AGE_AT_CLINICAL_EXAM', # [years]
