@@ -4,19 +4,40 @@ library(xlsx)
 
 # CZ - Czech Republic
 columns_cz <- list(
-  c('FAMILY_ID',          'character'),
-  c('SAMPLE_ID',          'character'),
-  c('SEX',                'character'),
-  c('AGE',                'numeric'),
-  c('MUTATION_AA_CHANGE', 'character') # Common dictionary
+  c('FAMILY_ID',                   'character'),
+  c('SAMPLE_ID',                   'character'),
+  c('SEX',                         'character'),
+  c('DOB',                         'Date'),
+  c('AGE_AT_DIAGNOSIS',            'numeric'),
+  c('AGE_AT_CLINICAL_EXAM',        'numeric'),
+  c('HEIGHT',                      'numeric'),
+  c('WEIGHT',                      'numeric'),
+  c('BMI_AT_CLINICAL_EXAM',        'numeric'),
+  c('MUTATION_AA_CHANGE',          'character'),
+  c('EXON',                        'character'),
+  c('MUTATION_CODING',             'character'),
+  c('MUTATION_INHERITANCE_FATHER', 'character'),
+  c('MUTATION_INHERITANCE_MOTHER', 'character'),
+  c('INSULIN_START_AGE',           'numeric'),
+  c('THERAPY_AT_DIAGNOSIS',        'character'),
+  c('THERAPY_AT_REFERRAL',         'character')
 )
-phenotype_cz <- read.xlsx('data/phenotype/Czech Republic- MODY3 database.xls',
-                          sheetIndex = 1,
+phenotype_cz <- read.xlsx('data/phenotype/ClinicalDatabase-Czech2015.xls',
+                          sheetName = 'CR',
                           stringsAsFactors = F,
-                          colIndex = 1:5,
+                          colIndex = 2:18,
                           colClasses = sapply(columns_cz, function(c)c[2]))
 names(phenotype_cz) <- sapply(columns_cz, function(c)c[1])
 phenotype_cz$COUNTRY <- 'CZ'
+
+phenotype_cz$EXON_NO <- as.numeric(sub('^.* ([0-9]+)', '\\1', phenotype_cz$EXON, perl=T))
+phenotype_cz$EXON <- grepl('^exon', trimws(phenotype_cz$EXON), ignore.case = T)
+phenotype_cz$EXON[is.na(phenotype_cz$EXON_NO)] <- NA
+
+phenotype_cz$MUTATION_INHERITANCE <- NA
+phenotype_cz$MUTATION_INHERITANCE[phenotype_cz$MUTATION_INHERITANCE_FATHER == '1'] <- 'F'
+phenotype_cz$MUTATION_INHERITANCE[phenotype_cz$MUTATION_INHERITANCE_MOTHER == '1'] <- 'M'
+phenotype_cz <- subset(phenotype_cz, select=-c(MUTATION_INHERITANCE_FATHER, MUTATION_INHERITANCE_MOTHER))
 
 # FR - France
 columns_fr <- list(
