@@ -1,6 +1,7 @@
 setwd("~/projekty/easd_nh")
 
 library(xlsx)
+library(lubridate)
 
 # CZ - Czech Republic
 columns_cz <- list(
@@ -255,8 +256,7 @@ phenotype$SEX[phenotype$SEX == '1'] <- 'Male'
 phenotype$SEX <- factor(phenotype$SEX, levels=c('Male', 'Female'))
 phenotype$SEX_PLINK <- as.numeric(phenotype$SEX)
 
-library(lubridate)
-phenotype$DOB_YEAR[is.na(DOB_YEAR)] <- year(phenotype$DOB[is.na(DOB_YEAR)])
+phenotype$DOB_YEAR[is.na(phenotype$DOB_YEAR)] <- year(phenotype$DOB[is.na(phenotype$DOB_YEAR)])
 phenotype <- subset(phenotype, select=-DOB)
 
 # TODO clean up MUTATION_AA_CHANGE, use proper HGVS!!!
