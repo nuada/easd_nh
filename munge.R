@@ -184,12 +184,13 @@ columns_us <- list(
   c('MUTATION_INHERITANCE', 'character'),
   c('MUTATION_AA_CHANGE',   'character'),
   c('THERAPY',              'character'), # Common dictionary
-  c('INSULIN_START_AGE',    'numeric')
+  c('INSULIN_START_AGE',    'numeric'),
+  c('DOB_YEAR',             'numeric')
 )
 phenotype_us <- read.xlsx('data/phenotype/MODY Aliquots_Phenotype file - Alessandro.xlsx',
                           sheetIndex = 1,
                           stringsAsFactors = F,
-                          colIndex=1:12,
+                          colIndex=c(1:12, 18),
                           colClasses = sapply(columns_us, function(c)c[2]))
 names(phenotype_us) <- sapply(columns_us, function(c)c[1])
 phenotype_us$COUNTRY <- 'US'
@@ -204,6 +205,7 @@ phenotype <- data.frame(
   BMI_AT_DIAGNOSIS = numeric(),
   COUNTRY = character(),
   DOB = as.Date(character()),
+  DOB_YEAR = numeric(),
   ETHNIC_ORIGIN = character(),
   EXON = logical(),
   EXON_NO = numeric(),
@@ -254,7 +256,7 @@ phenotype$SEX <- factor(phenotype$SEX, levels=c('Male', 'Female'))
 phenotype$SEX_PLINK <- as.numeric(phenotype$SEX)
 
 library(lubridate)
-phenotype$DOB_YEAR <- year(phenotype$DOB)
+phenotype$DOB_YEAR[is.na(DOB_YEAR)] <- year(phenotype$DOB[is.na(DOB_YEAR)])
 phenotype <- subset(phenotype, select=-DOB)
 
 # TODO clean up MUTATION_AA_CHANGE, use proper HGVS!!!
