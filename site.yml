@@ -31,18 +31,18 @@
         - build-essential
         - byobu
         - curl
+        - gdebi-core
         - git
         - ipython
         - lbzip2
         - openjdk-7-jre-headless
+        - plink
+        - psmisc
         - python-dev
-        - python-pip
-        - python-pip
         - python-pandas
+        - python-pip
         - r-base
         - r-base-dev
-        - psmisc
-        - plink
         - unzip
         - vcftools
         - vim
