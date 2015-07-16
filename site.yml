@@ -3,7 +3,7 @@
   connection: local
 
   vars:
-    rstudio_version: 0.99.422
+    rstudio_version: 0.99.467
 
   roles:
     - role: nuada.dockerize
@@ -31,18 +31,18 @@
         - build-essential
         - byobu
         - curl
+        - gdebi-core
         - git
         - ipython
         - lbzip2
         - openjdk-7-jre-headless
+        - plink
+        - psmisc
         - python-dev
-        - python-pip
-        - python-pip
         - python-pandas
+        - python-pip
         - r-base
         - r-base-dev
-        - psmisc
-        - plink
         - unzip
         - vcftools
         - vim
@@ -59,8 +59,9 @@
     - shell: make -j{{ ansible_processor_vcpus }} && mv bcftools /usr/bin chdir=/tmp/ansible/bcftools
 
     - name: install plink2
-    - shell: wget "https://www.cog-genomics.org$(curl -s https://www.cog-genomics.org/plink2/ | grep -Eo '/static/bin/plink[0-9]{6}/plink_linux_x86_64.zip')" &&
-        unzip plink_linux_x86_64.zip && mv plink /usr/bin chdir=/tmp/ansible
+      shell: wget https://www.cog-genomics.org$(curl -s https://www.cog-genomics.org/plink2/ | grep -Eo '/static/bin/plink[0-9]{6}/plink_linux_x86_64.zip') && unzip plink_linux_x86_64.zip && mv plink /usr/bin
+      args:
+        chdir: /tmp/ansible
 
     - name: download RStudio Server
       get_url:
