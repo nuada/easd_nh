@@ -310,10 +310,11 @@ phenotype_final <- subset(phenotype, select=columns_final)
 sample_sheet <- read.csv('data/sample_sheet/sample_sheet.csv', skip=10)
 sample_sheet <- subset(sample_sheet, select=1:6)
 names(sample_sheet) <- c('OMICRON_ID', 'SAMPLE_ID', 'PLATE', 'WELL', 'ARRAY_ID', 'ARRAY_POSITION')
+sample_sheet$GenomeStudio_FID <- as.character(rownames(sample_sheet))
 phenotype_and_sample_sheet <- unique(merge(sample_sheet, phenotype_final, by='SAMPLE_ID', all.x=T))
 
 # Drop phenotypes without sex - they are useless
 phenotype_and_sample_sheet <- subset(phenotype_and_sample_sheet, !is.na(SEX_PLINK))
 write.table(phenotype_and_sample_sheet, 'data/phenotype.csv', row.names = F, na = '', quote = F, sep='\t')
 
-plot(phenotype_and_sample_sheet[,c(9:16, 18)])
+plot(phenotype_and_sample_sheet[,c(10:17, 19)])
