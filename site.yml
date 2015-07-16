@@ -3,7 +3,7 @@
   connection: local
 
   vars:
-    rstudio_version: 0.99.422
+    rstudio_version: 0.99.467
 
   roles:
     - role: nuada.dockerize
