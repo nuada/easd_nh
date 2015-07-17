@@ -18,5 +18,6 @@ docker run -it --name easd_nh \
 	--volume=/rawdata:/rawdata \
 	--volume=/resources:/resources \
 	--volume=$(pwd)/tmp:/tmp \
+	--volume=$(pwd):/home/omicron/easd_nh \$
 	nuada/easd_nh
 ```
