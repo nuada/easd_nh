@@ -43,6 +43,7 @@
         - git
         - ipython
         - lbzip2
+        - openjdk-7-jdk
         - openjdk-7-jre-headless
         - plink
         - psmisc
@@ -51,6 +52,7 @@
         - python-pip
         - r-base
         - r-base-dev
+        - r-cran-rjava
         - unzip
         - vcftools
         - vim
