@@ -14,7 +14,7 @@
       group: name=omicron gid=1000
 
     - name: default user
-      user: name=omicron uid=1000 group=omicron groups=sudo shell=/bin/bash
+      user: name=omicron uid=1000 group=omicron groups=sudo shell=/bin/bash password="$6$ke9N9NZshW4J$G0TIYWqdDetKV/2nQNzvfIyew7FDyvlgzMHHSIo.GRxv1JtUSzxED3DSAuA0lkYsU08qTN8ChVi/luxYWQzxi1"
 
     - name: ssh dir
       file: path=/home/omicron/.ssh state=directory
