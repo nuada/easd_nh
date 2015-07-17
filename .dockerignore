@@ -1,0 +1,6 @@
+data/*
+doc/*
+munge.R
+qc.R
+README.md
+tmp/*
