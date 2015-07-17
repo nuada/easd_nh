@@ -5,3 +5,4 @@
 *.xlsx
 data/sample_sheet/sample_sheet.csv
 ssh
+.Rproj.user
