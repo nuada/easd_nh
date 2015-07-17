@@ -311,7 +311,7 @@ phenotype_final <- subset(phenotype, select=columns_final)
 sample_sheet <- read.csv(paste(data_dir, 'sample_sheet.csv', sep='/'), skip=10)
 sample_sheet <- subset(sample_sheet, select=1:6)
 names(sample_sheet) <- c('OMICRON_ID', 'SAMPLE_ID', 'PLATE', 'WELL', 'ARRAY_ID', 'ARRAY_POSITION')
-sample_sheet$GenomeStudio_FID <- as.character(rownames(sample_sheet))
+sample_sheet$GENOMESTUDIO_FID <- as.character(rownames(sample_sheet))
 phenotype_and_sample_sheet <- unique(merge(sample_sheet, phenotype_final, by='SAMPLE_ID', all.x=T))
 
 # Drop phenotypes without sex - they are useless
