@@ -1,7 +1,8 @@
-setwd("~/projekty/easd_nh")
-
 library(xlsx)
 library(lubridate)
+
+data_dir <- '/data/easd_nh'
+phenotype_dir <- paste(data_dir, 'phenotype', sep='/')
 
 # CZ - Czech Republic
 columns_cz <- list(
@@ -23,7 +24,7 @@ columns_cz <- list(
   c('THERAPY_AT_DIAGNOSIS',        'character'),
   c('THERAPY_AT_REFERRAL',         'character')
 )
-phenotype_cz <- read.xlsx('data/phenotype/ClinicalDatabase-Czech2015.xls',
+phenotype_cz <- read.xlsx(paste(phenotype_dir, 'ClinicalDatabase-Czech2015.xls', sep='/'),
                           sheetName = 'CR',
                           stringsAsFactors = F,
                           colIndex = 2:18,
@@ -58,7 +59,7 @@ columns_fr <- list(
   c('INSULIN',              'logical'),
   c('INSULIN_DELAY',        'numeric')    # TODO unit!?!
 )
-phenotype_fr <- read.xlsx('data/phenotype/DNAsending_KLUPA_140414_CBellanne.xlsx',
+phenotype_fr <- read.xlsx(paste(phenotype_dir, 'DNAsending_KLUPA_140414_CBellanne.xlsx', sep='/'),
                           sheetIndex = 1,
                           stringsAsFactors = F,
                           colIndex=3:17,
@@ -95,7 +96,7 @@ columns_sk <- list(
   c('THERAPY_AT_DIAGNOSIS',           'character'),
   c('THERAPY_AT_REFERRAL',            'character')
 )
-phenotype_sk <- read.xlsx('data/phenotype/ClinicalDatabase-Slovakia_MS_27022015.xls',
+phenotype_sk <- read.xlsx(paste(phenotype_dir, 'ClinicalDatabase-Slovakia_MS_27022015.xls', sep='/'),
                           sheetName = 'Slovakia',
                           stringsAsFactors = F,
                           colIndex=2:17,
@@ -144,7 +145,7 @@ columns_uk <- list(
   c('FATHER_DM',               'character'), # Convert to logical
   c('INSULIN_DELAY',           'character')  # Convert to years
 )
-phenotype_uk <- read.xlsx('data/phenotype/HNF1A_June2014_Poland_Final-Hattersley.xlsx',
+phenotype_uk <- read.xlsx(paste(phenotype_dir, 'HNF1A_June2014_Poland_Final-Hattersley.xlsx', sep='/'),
                           sheetName = 'clinical info',
                           stringsAsFactors = F,
                           colIndex=c(1, 5:30),
@@ -188,7 +189,7 @@ columns_us <- list(
   c('INSULIN_START_AGE',    'numeric'),
   c('DOB_YEAR',             'numeric')
 )
-phenotype_us <- read.xlsx('data/phenotype/MODY Aliquots_Phenotype file - Alessandro.xlsx',
+phenotype_us <- read.xlsx(paste(phenotype_dir, 'MODY Aliquots_Phenotype file - Alessandro.xlsx', sep='/'),
                           sheetIndex = 1,
                           stringsAsFactors = F,
                           colIndex=c(1:12, 18),
@@ -276,7 +277,7 @@ qplot(SAMPLE_ID, value, data=melt(bmi_xcheck, id.vars=c(1,4)), color=variable) +
 
 # TODO remove when phenotype information is compelete!
 # Write merged table
-# write.xlsx(phenotype, 'data/phenotype_merged.xlsx', col.names=T, row.names = F, showNA = F)
+# write.xlsx(phenotype, paste(data_dir, 'phenotype_merged.xlsx', sep='/'), col.names=T, row.names = F, showNA = F)
 
 # Expected table columns
 columns_final <- c(
@@ -300,14 +301,14 @@ phenotype_final <- subset(phenotype, select=columns_final)
 
 # TODO remove when phenotype information is compelete!
 # Write expected table
-# write.xlsx(phenotype_final, 'data/phenotype.xlsx', col.names=T, row.names = F, showNA = F)
+# write.xlsx(phenotype_final, paste(data_dir, 'phenotype.xlsx', sep='/'), col.names=T, row.names = F, showNA = F)
 
 # TODO remove when phenotype information is compelete!
 # Split by country
 # for (part in split(phenotype_final, phenotype_final$COUNTRY))
-#   write.xlsx(part, paste0('data/phenotype_', part$COUNTRY[1], '.xlsx'), col.names=T, row.names = F, showNA = F)
+#   write.xlsx(part, paste0(paste(data_dir, 'phenotype_', sep='/'), part$COUNTRY[1], '.xlsx'), col.names=T, row.names = F, showNA = F)
 
-sample_sheet <- read.csv('data/sample_sheet/sample_sheet.csv', skip=10)
+sample_sheet <- read.csv(paste(data_dir, 'sample_sheet.csv', sep='/'), skip=10)
 sample_sheet <- subset(sample_sheet, select=1:6)
 names(sample_sheet) <- c('OMICRON_ID', 'SAMPLE_ID', 'PLATE', 'WELL', 'ARRAY_ID', 'ARRAY_POSITION')
 sample_sheet$GenomeStudio_FID <- as.character(rownames(sample_sheet))
@@ -315,6 +316,6 @@ phenotype_and_sample_sheet <- unique(merge(sample_sheet, phenotype_final, by='SA
 
 # Drop phenotypes without sex - they are useless
 phenotype_and_sample_sheet <- subset(phenotype_and_sample_sheet, !is.na(SEX_PLINK))
-write.table(phenotype_and_sample_sheet, 'data/phenotype.csv', row.names = F, na = '', quote = F, sep='\t')
+write.table(phenotype_and_sample_sheet, paste(data_dir, 'phenotype.csv', sep='/'), row.names = F, na = '', quote = F, sep='\t')
 
 plot(phenotype_and_sample_sheet[,c(10:17, 19)])
