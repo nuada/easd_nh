@@ -3,6 +3,7 @@
   connection: local
 
   vars:
+    cran_mirror: "http://r.meteo.uni.wroc.pl"
     rstudio_version: 0.99.467
 
   roles:
@@ -10,6 +11,13 @@
       timezone: "Europe/Warsaw"
 
   tasks:
+    - name: install Ubuntu CRAN key
+      apt_key: keyserver=keyserver.ubuntu.com id=E084DAB9
+
+    - name: setup CRAN apt repo
+      copy: dest=/etc/apt/sources.list.d/cran.list
+        content="deb {{ cran_mirror }}/bin/linux/ubuntu {{ ansible_lsb.codename }}/"
+
     - name: group omicron
       group: name=omicron gid=1000
 
@@ -48,6 +56,15 @@
         - vim
         - wget
         - zlib1g-dev
+
+    - name: install R dependecies from CRAN
+      command: /usr/bin/Rscript -e "if (! ('{{ item }}' %in% installed.packages()[,'Package'])) install.packages('{{ item }}', repo=c('{{ cran_mirror }}'))"
+      with_items:
+        - ggplot2
+        - lubridate
+        - plyr
+        - reshape2
+        - xlsx
 
     - name: create temp dir
       file: path=/tmp/ansible state=directory
