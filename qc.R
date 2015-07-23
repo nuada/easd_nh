@@ -100,14 +100,14 @@ replicates <- subset(phenotype, grepl('.*_.*', phenotype$OMICRON_ID), select=c('
 genotypes <- plink('--keep', to_file(replicates), infile=updated_genotypes)
 genotypes <- plink('--merge-x', infile=genotypes)
 genotypes <- plink('--split-x', 'hg19', infile=genotypes)
-genotypes <- plink('--check-sex', '--geno', '0.5', infile=genotypes)
+genotypes <- plink('--check-sex', '--geno', '0.1', '--mind', '0.01', infile=genotypes)
 sex_check <- read.table(paste(genotypes, 'sexcheck', sep='.'), header = T)
 sex_check <- merge(sex_check, phenotype, by.x='IID', by.y='OMICRON_ID', all.x=T)
 sex_check$SAMPLE_ID <- factor(sex_check$SAMPLE_ID)
 table(sex_check$STATUS)
 table(sex_check$SAMPLE_ID, sex_check$STATUS)
 a<- table(sex_check$SAMPLE_ID, sex_check$STATUS)
-a[a[,1]!=0 & a[,2]!=0,]
+nrow(a[a[,1]!=0 & a[,2]!=0,])
 
 #' # Filtering
 #' MAF fitering
