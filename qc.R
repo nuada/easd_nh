@@ -28,7 +28,7 @@ phenotype <- read.csv(paste(data_dir, 'phenotype.csv', sep='/'), sep='\t')
 
 #' Convert file exported from Genome studio to binary file
 if (!file.exists(paste(raw_genotypes, 'bed', sep='.'))) {
-  system(paste(plink_path, '--noweb', '--file', paste(genotype_dir, 'PLINK_090715_0107', 'easd_nh', sep='/'), '--make-bed', '--out', raw_genotypes))
+  system(paste(plink_path, '--noweb', '--file', paste(genotype_dir, 'PLINK_250715_1022', 'easd_nh', sep='/'), '--make-bed', '--out', raw_genotypes))
 }
 
 #' Update FIDs
