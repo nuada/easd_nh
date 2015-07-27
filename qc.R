@@ -92,6 +92,7 @@ xy_b_allele_intensity <- read.table(paste(genotype_dir, 'easd_nh_xy_cr95_gc6.txt
 xy_b_allele_intensity <- subset(xy_b_allele_intensity, GC.Score >= 0.15)
 mean_xy_intensity <- ddply(xy_b_allele_intensity, .(Sample.ID, Chr), summarize, mean=mean(Y, na.rm = T))
 mean_xy_intensity <- merge(mean_xy_intensity, sex_check, by.x='Sample.ID', by.y='IID')
+library(reshape2)
 tmp <- dcast(mean_xy_intensity, Sample.ID + STATUS + SNPSEX + COUNTRY ~ Chr, value.var = 'mean')
 qplot(X, Y, color=STATUS, data=tmp, geom='point')
 
