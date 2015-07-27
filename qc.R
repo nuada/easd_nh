@@ -100,14 +100,16 @@ replicates <- subset(phenotype, grepl('.*_.*', phenotype$OMICRON_ID), select=c('
 genotypes <- plink('--keep', to_file(replicates), infile=updated_genotypes)
 genotypes <- plink('--merge-x', infile=genotypes)
 genotypes <- plink('--split-x', 'hg19', infile=genotypes)
-genotypes <- plink('--check-sex', '--geno', '0.1', '--mind', '0.01', infile=genotypes)
-sex_check <- read.table(paste(genotypes, 'sexcheck', sep='.'), header = T)
-sex_check <- merge(sex_check, phenotype, by.x='IID', by.y='OMICRON_ID', all.x=T)
-sex_check$SAMPLE_ID <- factor(sex_check$SAMPLE_ID)
-table(sex_check$STATUS)
-table(sex_check$SAMPLE_ID, sex_check$STATUS)
-a<- table(sex_check$SAMPLE_ID, sex_check$STATUS)
-nrow(a[a[,1]!=0 & a[,2]!=0,])
+genotypes <- plink('--check-sex', infile=genotypes)
+replicates_sex_check <- read.table(paste(genotypes, 'sexcheck', sep='.'), header = T)
+replicates_sex_check <- merge(replicates_sex_check, phenotype, by.x='IID', by.y='OMICRON_ID', all.x=T)
+replicates_sex_check$SAMPLE_ID <- factor(replicates_sex_check$SAMPLE_ID)
+table(replicates_sex_check$STATUS)
+
+sex_check_reproducibility <- ddply(replicates_sex_check, .(SAMPLE_ID), function (df){ all(df$STATUS == df$STATUS[1]) })
+sum(sex_check_reproducibility$V1)/length(unique(replicates_sex_check$SAMPLE_ID))
+sum(!sex_check_reproducibility$V1)
+replicates_sex_check[replicates_sex_check$SAMPLE_ID %in% subset(sex_check_reproducibility, V1==F)$SAMPLE_ID,1:6]
 
 #' # Filtering
 #' MAF fitering
