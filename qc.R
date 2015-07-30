@@ -133,16 +133,17 @@ genotypes <- plink('--remove', to_file(subset(sex_check, STATUS=='PROBLEM', sele
 
 #' # Filtering
 #' MAF fitering
-genotypes <- plink('--maf', '0.01', infile=prefiltered_genotypes)
+genotypes <- plink('--maf', '0.01', infile=genotypes)
 
 #' Filter by missingnes per marker
 genotypes <- plink('--geno', '0.1', infile=genotypes)
 
-#' HWE filtering
-# TODO record - do not remove
-genotypes <- plink('--hwe', '1e-5', infile=genotypes)
-
 #' Filter by missingnes per subject
-genotypes <- plink('--mind', '0.02', infile=genotypes)
+genotypes <- plink('--mind', '0.01', infile=genotypes)
+
+#' Remove SNPs with het. haploid genotypes
+het_hap_to_remove <- read.table(paste(genotypes, 'hh', sep='.'), header = F)
+names(het_hap_to_remove) <- c('FID', 'IID', 'marker')
+filtered_genotypes <- plink('--exclude', to_file(as.character(unique(het_hap_to_remove$marker))), infile=genotypes)
 
 # TODO Remove tmp dir when done?!?
