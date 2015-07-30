@@ -82,6 +82,7 @@ sex_check <- read.table(paste(genotypes, 'sexcheck', sep='.'), header = T)
 sex_check <- merge(sex_check, phenotype, by.x='IID', by.y='OMICRON_ID', all.x=T)
 table(sex_check$STATUS)
 table(sex_check$COUNTRY, sex_check$STATUS)
+table(sex_check$PLATE, sex_check$STATUS)
 qplot(seq_along(F), F, color=factor(STATUS), data=sex_check) + geom_hline(y=0.2)
 
 qplot(ARRAY_COL, ARRAY_ROW, fill=factor(STATUS), facets = ~ARRAY_ID, data=sex_check, geom='tile') + ggtitle('Sex check per sample vs location by array')
