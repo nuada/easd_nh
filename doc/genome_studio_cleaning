@@ -1,0 +1,23 @@
+- Import data using clusters provided by Illumina
+- Exclude samples with Call Rate < 0.95
+- Recluster
+- Exclude samples with Call Rate < 0.90 and from Plate 16
+- Recalculate statistics
+- Zero SNPs:
+  - Chr == MT
+  - Call Freq < 0.97 & Rep Errors > 2
+  - Call Freq < 0.97 & AB_Freq >= 0.4
+  - AB T Mean < 0.2 or AB T Mean > 0.8
+  - AA Freq == 1 & AA T Mean > 0.3
+  - AA Freq == 1 & AA T Dev > 0.06
+  - BB Freq == 1 & BB T Mean < 0.7
+  - BB Freq == 1 & BB T Dev > 0.06
+  - Call Freq < 0.97
+  - Rep Errors > 6
+  - Cluster Sep <= 0.3
+  - Het Excess > 0.2
+  - AA R Mean <= 0.2
+  - AB R Mean <= 0.2
+  - BB R Mean <= 0.2
+- Exclude samples with Call Rate < 0.99
+- Export to PLINK
