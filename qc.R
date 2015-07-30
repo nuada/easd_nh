@@ -125,6 +125,12 @@ xy_b_allele_freq <- merge(xy_b_allele_freq, replicates_sex_check[,c('IID', 'PEDS
 #+ fig.height=25
 qplot(Position, B.Allele.Freq, data=xy_b_allele_freq, geom='point') + facet_grid(Sample.ID + SAMPLE_ID  ~ Chr, scales = 'free', space='free')
 
+#' Drop all samples flagged by sex check
+genotypes <- plink('--remove', to_file(subset(sex_check, STATUS=='PROBLEM', select=c(FAMILY_ID, IID))), infile=prefiltered_genotypes)
+
+#' # Test for batch effects
+# TODO !?!
+
 #' # Filtering
 #' MAF fitering
 genotypes <- plink('--maf', '0.01', infile=prefiltered_genotypes)
