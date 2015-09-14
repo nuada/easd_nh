@@ -124,7 +124,7 @@ sex_check_reproducibility_failed
 #' Plot B allele frequency for samples flagged by replicate sex check
 xy_b_allele_freq <- subset(xy_b_allele, Sample.ID %in% sex_check_reproducibility_failed$IID)
 xy_b_allele_freq <- merge(xy_b_allele_freq, replicates_sex_check[,c('IID', 'PEDSEX', 'SAMPLE_ID')], by.x='Sample.ID', by.y='IID', all.x=T)
-#+ fig.height=25
+#+ fig.height=10
 qplot(Position, B.Allele.Freq, data=xy_b_allele_freq, geom='point') + facet_grid(Sample.ID + SAMPLE_ID  ~ Chr, scales = 'free', space='free')
 
 #' Drop all samples flagged by sex check
