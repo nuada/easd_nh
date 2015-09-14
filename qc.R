@@ -146,4 +146,22 @@ het_hap_to_remove <- read.table(paste(genotypes, 'hh', sep='.'), header = F)
 names(het_hap_to_remove) <- c('FID', 'IID', 'marker')
 filtered_genotypes <- plink('--exclude', to_file(as.character(unique(het_hap_to_remove$marker))), infile=genotypes)
 
+#' # Cleanup
+#' Analyze heterozygosity
+genotypes <- plink('--het', infile=filtered_genotypes)
+heterozygosity <- read.table(paste(genotypes, 'het', sep='.'), header = T)
+het_mean <- mean(heterozygosity$F)
+het_sd <- sd(heterozygosity$F)
+i <- 2
+length(which(heterozygosity$F < het_mean-i*het_sd | heterozygosity$F > het_mean+i*het_sd))
+qplot(F, data=heterozygosity) + geom_vline(xintercept=c(het_mean+i*het_sd, het_mean-i*het_sd), color='red')
+
+#' Plot relatedness - plink ibd/King
+#' Population structure
+
+#' HWE filtering
+# TODO record - do not remove
+#genotypes <- plink('--hwe', '1e-5', infile=genotypes)
+
+
 # TODO Remove tmp dir when done?!?
