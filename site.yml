@@ -68,6 +68,11 @@
         - reshape2
         - xlsx
 
+    - name: install printr
+      command: /usr/bin/Rscript -e "if (! ('{{ item }}' %in% installed.packages()[,'Package'])) install.packages('{{ item }}', repo=c('http://yihui.name/xran', '{{ cran_mirror }}'))"
+      with_items:
+        - printr
+
     - name: create temp dir
       file: path=/tmp/ansible state=directory
 
