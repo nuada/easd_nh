@@ -1,5 +1,6 @@
 #' Configuration
 #+ echo=FALSE
+library(printr)
 data_dir <- '/data/easd_nh'
 phenotype_dir <- paste(data_dir, 'phenotype', sep='/')
 genotype_dir <- paste(data_dir, 'genotype', sep='/')
