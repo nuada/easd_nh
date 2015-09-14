@@ -14,7 +14,8 @@ plink <- function(..., infile, outfile = NULL){
   if (is.null(outfile)) {
     outfile = tempfile(tmpdir = temp_dir)
   }
-  print(system(paste(plink_path, '--noweb', '--bfile', infile, '--make-bed', '--out', outfile, ...), intern = T))
+  stdout <- system(paste(plink_path, '--noweb', '--bfile', infile, '--make-bed', '--out', outfile, ...), intern = T)
+  print(grep('done\\.$', stdout, invert = T, value = T))
   return(outfile)
 }
 
