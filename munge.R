@@ -75,6 +75,26 @@ phenotype_fr$EXON <- substr(toupper(trimws(phenotype_fr$EXON_NO)), 1, 1) == 'E'
 phenotype_fr$EXON_NO <- as.numeric(sub('^.* ([0-9]+)', '\\1', phenotype_fr$EXON_NO, perl=T))
 
 # PL - Poland
+columns_pl <- list(
+  c('SAMPLE_ID',            'character'),
+  c('SEX',                  'character'),
+  c('DOB',                  'Date'),
+  c('AGE_AT_DIAGNOSIS',     'numeric'),
+  c('AGE_AT_CLINICAL_EXAM', 'numeric'),
+  c('HEIGHT',               'numeric'),
+  c('WEIGHT',               'numeric'),
+  c('BMI_AT_CLINICAL_EXAM', 'numeric'),
+  c('MUTATION_AA_CHANGE',   'character')
+)
+phenotype_pl <- read.xlsx(paste(phenotype_dir, 'MODY - microarrays_uzup_01_MS.xls', sep='/'),
+                          sheetIndex = 1,
+                          stringsAsFactors = F,
+                          colIndex=1:9,
+                          colClasses = sapply(columns_pl, function(c)c[2]))
+names(phenotype_pl) <- sapply(columns_pl, function(c)c[1])
+phenotype_pl$COUNTRY <- 'PL'
+
+phenotype_pl$FAMILY_ID <- sapply(phenotype_pl$SAMPLE_ID, function (x) unlist(strsplit(x, '-', fixed = T))[1])
 
 # SK - Slovakia
 columns_sk <- list(
@@ -243,7 +263,7 @@ phenotype <- data.frame(
 
 # Merge
 library(plyr)
-phenotype <- ldply(list(phenotype, phenotype_uk, phenotype_cz, phenotype_fr, phenotype_sk, phenotype_us), data.frame)
+phenotype <- ldply(list(phenotype, phenotype_uk, phenotype_cz, phenotype_fr, phenotype_pl, phenotype_sk, phenotype_us), data.frame)
 
 # Final cleanup
 phenotype$COUNTRY <- factor(phenotype$COUNTRY) # TODO add labels with full country names
