@@ -1,0 +1,7 @@
+[BPM]
+D:\chips\HumanCore-12v1-0_a\HumanCore-12v1-0_A.bpm
+[CLUSTER_FILE]
+D:\chips\HumanCore-12v1-0_a\HumanCore-12v1-0_A.egt
+[OUTPUT_PATH]
+D:\Illumina\Beeline\easd_nh
+[DATA_PATHS]
