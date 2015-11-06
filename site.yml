@@ -39,6 +39,7 @@
         - build-essential
         - byobu
         - curl
+        - dos2unix
         - gdebi-core
         - git
         - ipython
