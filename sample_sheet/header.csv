@@ -3,9 +3,7 @@ Investigator Name,Agnieszka Ludwig-Galezowska,,,,,,,,
 Project Name,EASD_NH,,,,,,,,
 Experiment Name,WP3,,,,,,,,
 Date,,,,,,,,,
-,,,,,,,,,
 [Manifests],,,,,,,,,
 A,HumanCore-12v1-0_A,,,,,,,,
-,,,,,,,,,
 [Data],,,,,,,,,
-Sample_ID,Sample_Name,Sample_Plate,Sample_Well,SentrixBarcode_A,SentrixPosition_A,Gender,Sample_Group,Replicate,Parent1,Parent2
+Sample_ID,Sample_Name,Sample_Plate,Sample_Well,SentrixBarcode_A,SentrixPosition_A,Path,Gender,Sample_Group,Replicate,Parent1,Parent2

@@ -37,4 +37,4 @@ samples.loc[samples.unique_id.str.endswith('_0'),'replicate'] = ''
 for idx, row in samples.sort(['plate', 'array', 'row', 'array_column']).iterrows():
 	d = row.to_dict()
 	d['well'] = '{0}{1:02d}'.format(string.letters[d['row']-1].upper(), d['plate_column'])
-	print '{unique_id},{sample_id},{plate},{well},{array},R{row:02d}C{array_column:02d},,,{replicate},,'.format(**d)
+	print '{unique_id},{sample_id},{plate},{well},{array},R{row:02d}C{array_column:02d},D:\\Illumina\\Beeline\\easd_nh,,,{replicate},,'.format(**d)
