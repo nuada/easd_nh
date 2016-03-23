@@ -4,7 +4,7 @@
 
   vars:
     cran_mirror: "http://r.meteo.uni.wroc.pl"
-    rstudio_version: 0.99.467
+    rstudio_version: 0.99.891
 
   roles:
     - role: nuada.dockerize
