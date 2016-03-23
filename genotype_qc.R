@@ -29,7 +29,7 @@ king_path <- '/usr/bin/king'
 king <- function (infile) {
   outfile = tempfile(tmpdir = temp_dir)
   print(system(paste(king_path, '-b', paste0(infile, '.bed'), '--kinship', '--prefix', outfile)))
-  return(list('all'=read.table(paste0(outfile, '.kin'), sep='\t', header = T), 'familly'=read.table(paste0(outfile, '.kin0'), sep='\t', header = T)))
+  return(list('all'=read.table(paste0(outfile, '.kin0'), sep='\t', header = T), 'family'=read.table(paste0(outfile, '.kin'), sep='\t', header = T)))
 }
 
 #' # Update GenomeStudio result with data from phentoype.csv
@@ -166,15 +166,19 @@ qplot(F, data=heterozygosity) + geom_vline(xintercept=c(het_mean+i*het_sd, het_m
 #' Plot relatedness - plink ibd/King
 #' Kinship coefficient! See: http://cphg.virginia.edu/quinlan/?p=300
 kinship <- king(genotypes)
-qplot(Kinship, data=kinship['all'])
-qplot(seq_along(Kinship), Kinship, data=kinship['all']) +
-  geom_hline(y=c(.5, .375, .25, .125, .0938, .0625, .0313, .0078, .002), color='blue') +
+qplot(Kinship, data=kinship[['all']])
+qplot(seq_along(Kinship), Kinship, data=kinship[['all']]) +
+  geom_hline(yintercept=c(.5, .375, .25, .125, .0938, .0625, .0313, .0078, .002), color='blue') +
   scale_y_log10()
+# Cryptic duplicates
+subset(kinship[['all']], Kinship == 0.5)
 
-qplot(Kinship, data=kinship['family'])
-qplot(seq_along(Kinship), Kinship, data=kinship['family']) +
-  geom_hline(y=c(.5, .375, .25, .125, .0938, .0625, .0313, .0078, .002), color='blue') +
+qplot(Kinship, data=kinship[['family']])
+qplot(seq_along(Kinship), Kinship, data=kinship[['family']]) +
+  geom_hline(yintercept=c(.5, .375, .25, .125, .0938, .0625, .0313, .0078, .002), color='blue') +
   scale_y_log10()
+# Cryptic duplicates
+subset(kinship[['family']], Kinship == 0.5)
 
 #' Population structure
 
