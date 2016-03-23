@@ -24,10 +24,6 @@ RUN ansible-playbook ${ANSIBLE_HOME}/site.yml
 ENV HOME /home/omicron
 WORKDIR ${HOME}
 
-# Setup SSH key
-ADD ssh/id_rsa ${HOME}/.ssh/id_rsa
-RUN chown omicron:omicron ${HOME}/.ssh/id_rsa && chmod 600 ${HOME}/.ssh/id_rsa
-
 # Expose RStudio Server
 EXPOSE 8787
 
