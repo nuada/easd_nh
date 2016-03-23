@@ -99,19 +99,17 @@ qplot(seq_along(F), F, color=factor(STATUS), data=sex_check) + geom_hline(y=0.2)
 qplot(ARRAY_COL, ARRAY_ROW, fill=factor(STATUS), facets = ~ARRAY_ID, data=sex_check, geom='tile') + ggtitle('Sex check per sample vs location by array')
 qplot(WELL_COL, WELL_ROW, fill=factor(STATUS), facets = ~PLATE, data=sex_check, geom='tile') + ggtitle('Sex check per sample vs location by plate')
 
-#' Plot probes intensities on X and Y chromosomes
-xy_b_allele <- read.table(paste(genotype_dir, 'easd_nh_xy.txt', sep='/'), header = T, skip=9, sep='\t')
-mean_xy_intensity <- ddply(xy_b_allele, .(Sample.ID, Chr), summarize, mean=mean(Y, na.rm = T))
-mean_xy_intensity <- merge(mean_xy_intensity, sex_check, by.x='Sample.ID', by.y='IID')
-library(reshape2)
-qplot(X, Y, color=STATUS, data=dcast(mean_xy_intensity, Sample.ID + STATUS + SNPSEX + COUNTRY ~ Chr, value.var = 'mean'), geom='point')
-
-#' Plot B allele frequency for samples flagged by sex check
-xy_b_allele_freq <- subset(xy_b_allele, Sample.ID %in% subset(sex_check, STATUS=='PROBLEM')$IID)
-xy_b_allele_freq <- merge(xy_b_allele_freq, sex_check[,c('IID', 'PEDSEX')], by.x='Sample.ID', by.y='IID', all.x=T)
-xy_b_allele_freq$PEDSEX <- factor(xy_b_allele_freq$PEDSEX, labels = c('male', 'female'))
-#+ fig.height=25
-qplot(Position, B.Allele.Freq, color=PEDSEX, data=xy_b_allele_freq, geom='point') + facet_grid(Sample.ID ~ Chr, scales = 'free', space='free')
+# TODO load this data from beeline final report!
+# #' Plot probes intensities on X and Y chromosomes
+# xy_snps <- read.csv(pipe("tail -n +9 /resources/arrays/HumanCore-12-v1/HumanCore-12-v1-0-B.csv | awk -F , '$10 == \"X\" || $10 == \"Y\"' | cut -d , -f 2,10,11"), header=F)
+# names(xy_snps) <- c('name', 'chr', 'position')
+#
+# TODO fixme
+# xy_b_allele_freq <- read.csv(pipe(paste("zcat", paste(genotype_dir, 'easd_nh_final_report.txt_Final.csv.gz', sep='/'), "| tail -n +9 | cut -d , -f 1,2,4,10,11")), header=T)
+# mean_xy_intensity <- ddply(xy_b_allele, .(Sample.ID, Chr), summarize, mean=mean(Y, na.rm = T))
+# mean_xy_intensity <- merge(mean_xy_intensity, sex_check, by.x='Sample.ID', by.y='IID')
+# library(reshape2)
+# qplot(X, Y, color=STATUS, data=dcast(mean_xy_intensity, Sample.ID + STATUS + SNPSEX + COUNTRY ~ Chr, value.var = 'mean'), geom='point')
 
 #' Sex check on replicates
 replicates <- subset(phenotype, grepl('.*_.*', phenotype$OMICRON_ID), select=c('FAMILY_ID', 'OMICRON_ID'))
@@ -130,11 +128,12 @@ sum(!sex_check_reproducibility$V1)
 sex_check_reproducibility_failed <- replicates_sex_check[replicates_sex_check$SAMPLE_ID %in% subset(sex_check_reproducibility, V1==F)$SAMPLE_ID,1:6]
 sex_check_reproducibility_failed
 
-#' Plot B allele frequency for samples flagged by replicate sex check
-xy_b_allele_freq <- subset(xy_b_allele, Sample.ID %in% sex_check_reproducibility_failed$IID)
-xy_b_allele_freq <- merge(xy_b_allele_freq, replicates_sex_check[,c('IID', 'PEDSEX', 'SAMPLE_ID')], by.x='Sample.ID', by.y='IID', all.x=T)
-#+ fig.height=10
-qplot(Position, B.Allele.Freq, data=xy_b_allele_freq, geom='point') + facet_grid(Sample.ID + SAMPLE_ID  ~ Chr, scales = 'free', space='free')
+# TODO fixme
+# #' Plot B allele frequency for samples flagged by replicate sex check
+# xy_b_allele_freq <- subset(xy_b_allele, Sample.ID %in% sex_check_reproducibility_failed$IID)
+# xy_b_allele_freq <- merge(xy_b_allele_freq, replicates_sex_check[,c('IID', 'PEDSEX', 'SAMPLE_ID')], by.x='Sample.ID', by.y='IID', all.x=T)
+# #+ fig.height=10
+# qplot(Position, B.Allele.Freq, data=xy_b_allele_freq, geom='point') + facet_grid(Sample.ID + SAMPLE_ID  ~ Chr, scales = 'free', space='free')
 
 #' Drop all samples flagged by sex check
 genotypes <- plink('--remove', to_file(subset(sex_check, STATUS=='PROBLEM', select=c(FAMILY_ID, IID))), infile=prefiltered_genotypes)
