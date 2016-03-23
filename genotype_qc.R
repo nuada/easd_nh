@@ -138,9 +138,6 @@ sex_check_reproducibility_failed
 #' Drop all samples flagged by sex check
 genotypes <- plink('--remove', to_file(subset(sex_check, STATUS=='PROBLEM', select=c(FAMILY_ID, IID))), infile=prefiltered_genotypes)
 
-#' # Test for batch effects
-# TODO !?!
-
 #' # Filtering
 #' MAF fitering
 genotypes <- plink('--maf', '0.01', infile=genotypes)
@@ -182,8 +179,5 @@ qplot(seq_along(Kinship), Kinship, data=kinship['family']) +
 #' Population structure
 
 #' HWE filtering
-# TODO record - do not remove
-#genotypes <- plink('--hwe', '1e-5', infile=genotypes)
-
-
-# TODO Remove tmp dir when done?!?
+# TODO record and plot - do not remove
+# genotypes <- plink('--hwe', '1e-5', infile=genotypes)
