@@ -1,3 +1,0 @@
-#!/bin/bash
-
-ssh -fN -L 8787:$(ssh jrrr "docker inspect -f '{{ .NetworkSettings.IPAddress }}' easd_nh"):8787 jrrr
