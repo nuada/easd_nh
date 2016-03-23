@@ -65,6 +65,8 @@ missingnes <- function (genotypes) {
   print(qplot(ARRAY_COL, ARRAY_ROW, fill=F_MISS, facets = ~ARRAY_ID, data=missing_per_sample, geom='tile') + scale_fill_gradient(low="white", high="red") + ggtitle('Fraction missing per sample vs location by array'))
   print(qplot(WELL_COL, WELL_ROW, fill=F_MISS, facets = ~PLATE, data=missing_per_sample, geom='tile') + scale_fill_gradient(low="white", high="red") + ggtitle('Fraction missing per sample vs location by plate'))
   missing_per_marker <- read.table(paste(genotypes, 'lmiss', sep='.'), header = T)
+  # Exclude markers on Y chromosome
+  missing_per_marker <- subset(missing_per_marker, CHR != 24)
   print(qplot(factor(CHR), F_MISS, color=factor(CHR), data = missing_per_marker, geom='boxplot') + ggtitle('Missingnes per marker'))
   return(missing_per_sample)
 }
