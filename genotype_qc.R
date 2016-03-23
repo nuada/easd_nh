@@ -35,14 +35,14 @@ king <- function (infile) {
 #' # Update GenomeStudio result with data from phentoype.csv
 phenotype <- read.csv(paste(data_dir, 'phenotype.csv', sep='/'), sep='\t')
 
-#' Convert file exported from Genome studio to binary file
+#' Convert exported text file to binary file
 if (!file.exists(paste(raw_genotypes, 'bed', sep='.'))) {
-  system(paste(plink_path, '--noweb', '--file', paste(genotype_dir, 'PLINK_290715_1228', 'easd_nh', sep='/'), '--make-bed', '--out', raw_genotypes))
+  system(paste(plink_path, '--noweb', '--file', paste(genotype_dir, 'easd_nh_2015-11-13-101820', sep='/'), '--make-bed', '--out', raw_genotypes))
 }
 
 #' Update FIDs
 genotypes <- plink('--update-ids',
-                   to_file(subset(phenotype, select=c(GENOMESTUDIO_FID, OMICRON_ID, FAMILY_ID, OMICRON_ID))),
+                   to_file(subset(phenotype, select=c(OMICRON_ID, OMICRON_ID, FAMILY_ID, OMICRON_ID))),
                    infile=raw_genotypes)
 
 #' Update Sex field
