@@ -108,5 +108,8 @@
     - name: install qctool
       shell: curl http://www.well.ox.ac.uk/~gav/qctool/resources/qctool_v1.4-linux-x86_64.tgz | tar zx -C /usr/bin --wildcards '*/qctool' --strip-components=1
 
+    - name: install csvkit
+      pip: name=csvkit
+
     - name: cleanup temp
       file: path=/tmp/ansible state=absent
