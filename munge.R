@@ -1,7 +1,7 @@
 library(xlsx)
 library(lubridate)
 
-data_dir <- '/data/easd_nh'
+data_dir <- '/data'
 phenotype_dir <- paste(data_dir, 'phenotype', sep='/')
 
 # CZ - Czech Republic
@@ -76,25 +76,31 @@ phenotype_fr$EXON_NO <- as.numeric(sub('^.* ([0-9]+)', '\\1', phenotype_fr$EXON_
 
 # PL - Poland
 columns_pl <- list(
-  c('SAMPLE_ID',            'character'),
-  c('SEX',                  'character'),
-  c('DOB',                  'Date'),
-  c('AGE_AT_DIAGNOSIS',     'numeric'),
-  c('AGE_AT_CLINICAL_EXAM', 'numeric'),
-  c('HEIGHT',               'numeric'),
-  c('WEIGHT',               'numeric'),
-  c('BMI_AT_CLINICAL_EXAM', 'numeric'),
-  c('MUTATION_AA_CHANGE',   'character')
+  c('SAMPLE_ID',                   'character'),
+  c('SEX',                         'character'),
+  c('DOB_YEAR',                    'numeric'),
+  c('AGE_AT_DIAGNOSIS',            'numeric'),
+  c('AGE_AT_CLINICAL_EXAM',        'numeric'),
+  c('HEIGHT',                      'numeric'),
+  c('WEIGHT',                      'numeric'),
+  c('BMI_AT_DIAGNOSIS',            'numeric'),
+  c('MUTATION_AA_CHANGE',          'character'),
+  c('MUTATION_INHERITANCE_FATHER', 'character'),
+  c('MUTATION_INHERITANCE_MOTHER', 'character')
 )
-phenotype_pl <- read.xlsx(paste(phenotype_dir, 'MODY - microarrays_uzup_01_MS.xls', sep='/'),
+phenotype_pl <- read.xlsx(paste(phenotype_dir, 'MODY - microarrays_uzup_MS_2015-11-10.xls', sep='/'),
                           sheetIndex = 1,
                           stringsAsFactors = F,
-                          colIndex=1:9,
+                          colIndex=1:11,
                           colClasses = sapply(columns_pl, function(c)c[2]))
 names(phenotype_pl) <- sapply(columns_pl, function(c)c[1])
 phenotype_pl$COUNTRY <- 'PL'
 
 phenotype_pl$FAMILY_ID <- sapply(phenotype_pl$SAMPLE_ID, function (x) unlist(strsplit(x, '-', fixed = T))[1])
+
+phenotype_pl$MUTATION_INHERITANCE <- NA
+phenotype_pl$MUTATION_INHERITANCE[phenotype_pl$MUTATION_INHERITANCE_FATHER == 'Y'] <- 'F'
+phenotype_pl$MUTATION_INHERITANCE[phenotype_pl$MUTATION_INHERITANCE_MOTHER == 'Y'] <- 'M'
 
 # SK - Slovakia
 columns_sk <- list(
@@ -295,10 +301,6 @@ bmi_xcheck$diff <- bmi_xcheck$BMI_AT_CLINICAL_EXAM-bmi_xcheck$BMI_CALCULATED
 bmi_xcheck[order(bmi_xcheck$diff, decreasing = T),]
 qplot(SAMPLE_ID, value, data=melt(bmi_xcheck, id.vars=c(1,4)), color=variable) + coord_flip()
 
-# TODO remove when phenotype information is compelete!
-# Write merged table
-# write.xlsx(phenotype, paste(data_dir, 'phenotype_merged.xlsx', sep='/'), col.names=T, row.names = F, showNA = F)
-
 # Expected table columns
 columns_final <- c(
   'COUNTRY',              # two letter country code
@@ -319,23 +321,17 @@ columns_final <- c(
 
 phenotype_final <- subset(phenotype, select=columns_final)
 
-# TODO remove when phenotype information is compelete!
-# Write expected table
-# write.xlsx(phenotype_final, paste(data_dir, 'phenotype.xlsx', sep='/'), col.names=T, row.names = F, showNA = F)
-
-# TODO remove when phenotype information is compelete!
 # Split by country
-# for (part in split(phenotype_final, phenotype_final$COUNTRY))
-#   write.xlsx(part, paste0(paste(data_dir, 'phenotype_', sep='/'), part$COUNTRY[1], '.xlsx'), col.names=T, row.names = F, showNA = F)
+for (part in split(phenotype_final, phenotype_final$COUNTRY))
+  write.xlsx(part, paste0(paste(data_dir, 'phenotype_', sep='/'), part$COUNTRY[1], '.xlsx'), col.names=T, row.names = F, showNA = F)
 
-sample_sheet <- read.csv(paste(data_dir, 'sample_sheet.csv', sep='/'), skip=10)
+sample_sheet <- read.csv(paste(data_dir, 'sample_sheet.csv', sep='/'), skip=8)
 sample_sheet <- subset(sample_sheet, select=1:6)
 names(sample_sheet) <- c('OMICRON_ID', 'SAMPLE_ID', 'PLATE', 'WELL', 'ARRAY_ID', 'ARRAY_POSITION')
 sample_sheet$ARRAY_ROW <- as.numeric(substr(as.character(sample_sheet$ARRAY_POSITION), 2, 3))
 sample_sheet$ARRAY_COL <- as.numeric(substr(as.character(sample_sheet$ARRAY_POSITION), 5, 6))
 sample_sheet$WELL_ROW <- as.factor(substr(as.character(sample_sheet$WELL), 1, 1))
 sample_sheet$WELL_COL <- as.numeric(substr(as.character(sample_sheet$WELL), 2, 3))
-sample_sheet$GENOMESTUDIO_FID <- as.character(rownames(sample_sheet))
 
 phenotype_and_sample_sheet <- unique(merge(sample_sheet, phenotype_final, by='SAMPLE_ID', all.x=T))
 
@@ -343,4 +339,8 @@ phenotype_and_sample_sheet <- unique(merge(sample_sheet, phenotype_final, by='SA
 phenotype_and_sample_sheet <- subset(phenotype_and_sample_sheet, !is.na(SEX_PLINK))
 write.table(phenotype_and_sample_sheet, paste(data_dir, 'phenotype.csv', sep='/'), row.names = F, na = '', quote = F, sep='\t')
 
-plot(phenotype_and_sample_sheet[,c(10:17, 19)])
+# Samples that were not genotyped
+setdiff(phenotype_final$SAMPLE_ID, sample_sheet$SAMPLE_ID)
+
+# Samples without phenotype information
+setdiff(sample_sheet$SAMPLE_ID, phenotype_final$SAMPLE_ID)
