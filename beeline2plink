@@ -1,0 +1,12 @@
+#!/bin/bash
+
+ANNOTATION=HumanCore-12-v1-0-B.csv
+# Download annotation if it does not exist
+if [[ ! -f ${ANNOTATION} ]]; then
+	wget ftp://webdata:webdata@ussd-ftp.illumina.com/downloads/ProductFiles/HumanCore/HumanCore-12-v1-0-B.csv
+fi
+
+zcat ${1} | beelinetools.py convert -i - -m ${ANNOTATION} -o /tmp
+timestamp=$(date +%F-%T | tr -d ':')
+mv /tmp/from_stdin.ped ${2}_${timestamp}.ped
+mv /tmp/from_stdin.map ${2}_${timestamp}.map
