@@ -20,7 +20,7 @@ samples.plate = samples.plate.astype('int')
 samples.row = samples.row.astype('int')
 samples.array_column = samples.array_column.astype('int')
 samples.plate_column = samples.plate_column.astype('int')
-samples.sample_id = samples.sample_id.map(lambda s: s.strip().upper().replace(' ', ''))
+samples.sample_id = samples.sample_id.map(lambda s: s.strip().replace(' ', ''))
 
 def handle_replicates(replicates):
 	rows, cols = replicates.shape
