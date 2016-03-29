@@ -1,14 +1,15 @@
 #' Configuration
-#+ echo=FALSE
 library(printr)
+library(plyr)
+library(ggplot2)
 data_dir <- '/data'
 phenotype_dir <- paste(data_dir, 'phenotype', sep='/')
 genotype_dir <- paste(data_dir, 'genotype', sep='/')
 raw_genotypes <- paste(data_dir, 'genotype', 'easd_nh', sep='/')
+resources_dir <- '/resources/arrays'
 temp_dir = tempdir()
 
 #' PLINK wrapper
-#+ echo=FALSE
 plink_path <- '/usr/bin/plink'
 plink <- function(..., infile, outfile = NULL){
   if (is.null(outfile)) {
@@ -19,20 +20,14 @@ plink <- function(..., infile, outfile = NULL){
   return(outfile)
 }
 
+#' data.frame to TSV file
 to_file <- function(x) {
   file_name <- tempfile(tmpdir = temp_dir)
   write.table(x, file=file_name, col.names = F, row.names = F, quote = F)
   return(file_name)
 }
 
-king_path <- '/usr/bin/king'
-king <- function (infile) {
-  outfile = tempfile(tmpdir = temp_dir)
-  print(system(paste(king_path, '-b', paste0(infile, '.bed'), '--kinship', '--prefix', outfile)))
-  return(list('all'=read.table(paste0(outfile, '.kin0'), sep='\t', header = T), 'family'=read.table(paste0(outfile, '.kin'), sep='\t', header = T)))
-}
-
-#' # Update GenomeStudio result with data from phentoype.csv
+#' # Update raw genotypes with data from phentoype.csv
 phenotype <- read.csv(paste(data_dir, 'phenotype.csv', sep='/'), sep='\t')
 
 #' Convert exported text file to binary file
@@ -51,13 +46,14 @@ genotypes <- plink('--update-sex',
                    infile=genotypes)
 
 #' Drop excluded individuals (not included in phentoype file)
-updated_genotypes <- plink('--keep',
+genotypes_complete <- plink('--keep',
                    to_file(subset(phenotype, select=c(FAMILY_ID, OMICRON_ID))),
                    infile=genotypes)
 
-#' Plot missinges
-library(ggplot2)
+#' Remove SNPs with unknown locaton
+genotypes_no_chr0 <- plink('--not-chr', 0, infile = genotypes_complete)
 
+#' Plot missinges
 missingnes <- function (genotypes) {
   missing_per_sample <- read.table(paste(genotypes, 'imiss', sep='.'), header = T)
   missing_per_sample <- merge(missing_per_sample, phenotype, by.x='IID', by.y='OMICRON_ID', all.x=T)
@@ -71,22 +67,23 @@ missingnes <- function (genotypes) {
   return(missing_per_sample)
 }
 
-missing_per_sample <- missingnes(plink('--missing', infile=updated_genotypes))
+missing_per_sample <- missingnes(plink('--missing', infile=genotypes_no_chr0))
 
-#' Remove replicates by missingnes
-library(plyr)
-replicates_to_remove <- ddply(subset(missing_per_sample, grepl('.*_.*', missing_per_sample$IID)), .(SAMPLE_ID), function (df){ df[order(df$F_MISS)[2:nrow(df)], c('FAMILY_ID', 'IID')] })[,2:3]
-genotypes <- plink('--remove', to_file(replicates_to_remove), infile=updated_genotypes)
+#' Drop failed plate #16
+genotypes_no_plate_16 <- plink('--remove', to_file(subset(phenotype, PLATE == 16, select=c('FAMILY_ID', 'OMICRON_ID'))), infile=genotypes)
 
 #' Drop failed arrays
 mean_missingnes <- ddply(missing_per_sample, .(ARRAY_ID), summarize, mean=mean(F_MISS))
-prefiltered_genotypes <- plink('--remove', to_file(subset(phenotype, ARRAY_ID %in% mean_missingnes[mean_missingnes$mean > 0.5, 1], select=c('FAMILY_ID', 'OMICRON_ID'))), infile=genotypes)
+genotypes_no_failures <- plink('--remove', to_file(subset(phenotype, ARRAY_ID %in% mean_missingnes[mean_missingnes$mean > 0.5, 1], select=c('FAMILY_ID', 'OMICRON_ID'))), infile=genotypes_no_plate_16)
 
 #' Plot missinges after removing replicates
-invisible(missingnes(plink('--missing', infile=prefiltered_genotypes)))
+invisible(missingnes(plink('--missing', infile=genotypes_no_failures)))
+
+#' Filter by missingnes per subject
+genotypes_mind_1pct <- plink('--mind', '0.01', infile=genotypes_no_failures)
 
 #' Sex check
-genotypes <- plink('--merge-x', infile=prefiltered_genotypes)
+genotypes <- plink('--merge-x', infile=genotypes_mind_1pct)
 genotypes <- plink('--split-x', 'hg19', infile=genotypes)
 genotypes <- plink('--check-sex', infile=genotypes)
 sex_check <- read.table(paste(genotypes, 'sexcheck', sep='.'), header = T)
@@ -136,36 +133,35 @@ sex_check_reproducibility_failed
 # qplot(Position, B.Allele.Freq, data=xy_b_allele_freq, geom='point') + facet_grid(Sample.ID + SAMPLE_ID  ~ Chr, scales = 'free', space='free')
 
 #' Drop all samples flagged by sex check
-genotypes <- plink('--remove', to_file(subset(sex_check, STATUS=='PROBLEM', select=c(FAMILY_ID, IID))), infile=prefiltered_genotypes)
+genotypes_no_sex_errors <- plink('--remove', to_file(subset(sex_check, STATUS=='PROBLEM', select=c(FAMILY_ID, IID))), infile=prefiltered_genotypes)
 
-#' # Filtering
-#' MAF fitering
-genotypes <- plink('--maf', '0.01', infile=genotypes)
+#' Drop chr >= 23
+genotypes_autosomes <- plink('--chr', '1-22', infile = genotypes_no_sex_errors)
 
-#' Filter by missingnes per marker
-genotypes <- plink('--geno', '0.1', infile=genotypes)
-
-#' Filter by missingnes per subject
-genotypes <- plink('--mind', '0.01', infile=genotypes)
-
-#' Remove SNPs with het. haploid genotypes
-het_hap_to_remove <- read.table(paste(genotypes, 'hh', sep='.'), header = F)
-names(het_hap_to_remove) <- c('FID', 'IID', 'marker')
-filtered_genotypes <- plink('--exclude', to_file(as.character(unique(het_hap_to_remove$marker))), infile=genotypes)
-
-#' # Cleanup
 #' Analyze heterozygosity
-genotypes <- plink('--het', infile=filtered_genotypes)
+genotypes <- plink('--het', infile=genotypes_autosomes)
 heterozygosity <- read.table(paste(genotypes, 'het', sep='.'), header = T)
-het_mean <- mean(heterozygosity$F)
-het_sd <- sd(heterozygosity$F)
-i <- 2
-length(which(heterozygosity$F < het_mean-i*het_sd | heterozygosity$F > het_mean+i*het_sd))
-qplot(F, data=heterozygosity) + geom_vline(xintercept=c(het_mean+i*het_sd, het_mean-i*het_sd), color='red')
+heterozygosity$H <- heterozygosity$O/heterozygosity$N*100
+qplot(H, data=heterozygosity)
+# TODO remove samples with extreme heterozygosity
 
-#' Plot relatedness - plink ibd/King
+#' Remove replicates by missingnes
+genotypes <- plink('--missing', infile=genotypes_autosomes)
+missing_per_sample <- read.table(paste(genotypes, 'imiss', sep='.'), header = T)
+missing_per_sample <- merge(missing_per_sample, phenotype, by.x='IID', by.y='OMICRON_ID', all.x=T)
+replicates_to_remove <- ddply(subset(missing_per_sample, grepl('.*_.*', missing_per_sample$IID)), .(SAMPLE_ID), function (df){ df[order(df$F_MISS)[2:nrow(df)], c('FAMILY_ID', 'IID')] })[,2:3]
+genotypes_unique <- plink('--remove', to_file(replicates_to_remove), infile=updated_genotypes)
+
+#' KING wrapper
+king_path <- '/usr/bin/king'
+king <- function (infile) {
+  outfile = tempfile(tmpdir = temp_dir)
+  print(system(paste(king_path, '-b', paste0(infile, '.bed'), '--kinship', '--prefix', outfile)))
+  return(list('all'=read.table(paste0(outfile, '.kin0'), sep='\t', header = T), 'family'=read.table(paste0(outfile, '.kin'), sep='\t', header = T)))
+}
+
 #' Kinship coefficient! See: http://cphg.virginia.edu/quinlan/?p=300
-kinship <- king(genotypes)
+kinship <- king(genotypes_unique)
 qplot(Kinship, data=kinship[['all']])
 qplot(seq_along(Kinship), Kinship, data=kinship[['all']]) +
   geom_hline(yintercept=c(.5, .375, .25, .125, .0938, .0625, .0313, .0078, .002), color='blue') +
@@ -180,8 +176,82 @@ qplot(seq_along(Kinship), Kinship, data=kinship[['family']]) +
 # Cryptic duplicates
 subset(kinship[['family']], Kinship == 0.5)
 
-#' Population structure
+#' Filter by missingnes per marker
+genotypes <- plink('--geno', '0.5', infile=genotypes)
 
+# TODO filter by geno & maf!
 #' HWE filtering
-# TODO record and plot - do not remove
-# genotypes <- plink('--hwe', '1e-5', infile=genotypes)
+genotypes <- plink('--hwe', '1e-5', infile=genotypes)
+
+#' MAF fitering
+genotypes <- plink('--maf', '0.01', infile=genotypes)
+
+#' # Population structure
+convertf_path <- '/usr/bin/convertf'
+smartpca_path <- '/usr/bin/smartpca'
+
+#' Extract HapMap SNPs
+hapmap_snps <- plink('--extract', paste(resources_dir, 'hapmap3', 'hapmap3r2_CEU.CHB.JPT.YRI.no-at-cg-snps.txt', sep='/'), infile=genotypes)
+
+#' LD pruning
+genotypes_pruned <- plink('--exclude', paste(resources_dir, 'high_ld_hg19.txt', sep='/'), '--range', '--indep-pairwise 50 5 0.2', infile=hapmap_snps)
+
+genotypes_with_hapmap <- plink('--bmerge', paste(resources_dir, 'hapmap3',
+                    'hapmap3r2_CEU.CHB.JPT.YRI.founders.no-at-cg-snps', sep='/'),
+                   '--extract', paste(genotypes_pruned, 'prune.in', sep='.'), infile=genotypes_pruned)
+
+#' Flip failed SNPs
+genotypes_flipped <- plink('--extract', paste(resources_dir, 'hapmap3', 'hapmap3r2_CEU.CHB.JPT.YRI.no-at-cg-snps.txt', sep='/'),
+                   '--flip', paste0(genotypes_with_hapmap, '-merge.missnp'), infile=hapmap_snps)
+
+genotypes_with_hapmap_2 <- plink('--bmerge', paste(resources_dir, 'hapmap3',
+                                                 'hapmap3r2_CEU.CHB.JPT.YRI.founders.no-at-cg-snps', sep='/'),
+                               '--extract', paste(genotypes_pruned, 'prune.in', sep='.'), infile=genotypes_flipped)
+
+genotypes <- plink('--exclude', paste0(genotypes_with_hapmap_2, '-merge.missnp'), '--extract', paste(genotypes_pruned, 'prune.in', sep='.'), infile = genotypes_flipped)
+
+genotypes_with_hapmap_3 <- plink('--bmerge', paste(resources_dir, 'hapmap3',
+                                                   'hapmap3r2_CEU.CHB.JPT.YRI.founders.no-at-cg-snps', sep='/'),
+                                 '--extract', paste(genotypes_pruned, 'prune.in', sep='.'), infile=genotypes)
+
+# Convert to PED/MAP
+genotypes_merged <- tempfile(tmpdir = temp_dir)
+system(paste(plink_path, '--noweb', '--bfile', genotypes_with_hapmap_3, '--recode', '--output-missing-phenotype', '1', '--out', genotypes_merged))
+
+# Setup convertf
+convertf_params <- tempfile(tmpdir = temp_dir)
+eigenstrat_input <- tempfile(tmpdir = temp_dir)
+cat(paste0('genotypename:    ', genotypes_merged, '.ped'), file=convertf_params)
+cat(paste0('snpname:         ', genotypes_merged, '.map'), file=convertf_params, append = T)
+cat(paste0('indivname:       ', genotypes_merged, '.ped'), file=convertf_params, append = T)
+cat('outputformat:    EIGENSTRAT', file=convertf_params, append = T)
+cat(paste0('genotypeoutname: ', eigenstrat_input, '.eigenstratgeno'), file=convertf_params, append = T)
+cat(paste0('snpoutname:      ', eigenstrat_input, '.snp'), file=convertf_params, append = T)
+cat(paste0('indivoutname:    ', eigenstrat_input, '.ind'), file=convertf_params, append = T)
+cat('familynames:     NO', file=convertf_params, append = T)
+
+# Convert PED/MAP to EIGENSTRAT
+system(paste(convertf_path, '-p', convertf_params))
+
+# Setup smartcpa
+smartcpa_params <- tempfile(tmpdir = temp_dir)
+eigenstrat_output <- tempfile(tmpdir = temp_dir)
+
+cat(paste0('genotypename: ', eigenstrat_input, '.eigenstratgeno'), file=smartcpa_params)
+cat(paste0('snpname:      ', eigenstrat_input, '.snp'), file=smartcpa_params, append = T)
+cat(paste0('indivname:    ', eigenstrat_input, '.ind'), file=smartcpa_params, append = T)
+cat(paste0('evecoutname:  ', eigenstrat_output, '.evec'), file=smartcpa_params, append = T)
+cat(paste0('evaloutname:  ', eigenstrat_output, '.eval'), file=smartcpa_params, append = T)
+cat('altnormstyle: NO', file=smartcpa_params, append = T)
+cat('numoutevec:     10', file=smartcpa_params, append = T)
+cat('numoutlieriter: 0', file=smartcpa_params, append = T)
+cat('numoutlierevec: 2', file=smartcpa_params, append = T)
+cat('outliersigmathresh: 8.0', file=smartcpa_params, append = T)
+cat('qtmode: 0', file=smartcpa_params, append = T)
+cat('nsnpldregress: 2', file=smartcpa_params, append = T)
+cat(paste0('evaloutname:  ', eigenstrat_output, '.outlier'), file=smartcpa_params, append = T)
+
+# Run smartpca
+system(paste(smartpca_path, '-p', smartpca_params))
+
+# TODO plot pop pca
