@@ -1,7 +1,10 @@
 #' Configuration
+library(RcppEigen)
 library(printr)
 library(plyr)
 library(ggplot2)
+library(plink2R) # install_github("gabraham/plink2R", subdir = 'plink2R')
+
 data_dir <- '/data'
 phenotype_dir <- paste(data_dir, 'phenotype', sep='/')
 genotype_dir <- paste(data_dir, 'genotype', sep='/')
@@ -27,6 +30,22 @@ to_file <- function(x) {
   return(file_name)
 }
 
+#' Compare two steps of the analysis and print sample statistics
+sample_stats <- function(genotype_a, genotype_b) {
+  stats <- list()
+  a <- read_plink(genotype_a)
+  b <- read_plink(genotype_b)
+  stats$snps <- c(dim(a$bim)[1], dim(b$bim)[1])
+  stats$individuals <- c(dim(a$fam)[1], dim(b$fam)[1])
+  if (stats$individuals[1] != stats$individuals[2]) {
+    stats$individuals_removed <- setdiff(apply(a$fam[,1:2], 1, function (row) paste(row[1], row[2])), apply(b$fam[,1:2], 1, function (row) paste(row[1], row[2])))
+  }
+  if (stats$snps[1] != stats$snps[2]) {
+    stats$snps_removed <- stats$snps[1] - stats$snps[2]
+  }
+  stats
+}
+
 #' # Update raw genotypes with data from phentoype.csv
 phenotype <- read.csv(paste(data_dir, 'phenotype.csv', sep='/'), sep='\t')
 
@@ -46,12 +65,14 @@ genotypes <- plink('--update-sex',
                    infile=genotypes)
 
 #' Drop excluded individuals (not included in phentoype file)
-genotypes_complete <- plink('--keep',
+genotypes_with_phenotype <- plink('--keep',
                    to_file(subset(phenotype, select=c(FAMILY_ID, OMICRON_ID))),
                    infile=genotypes)
+sample_stats(genotypes, genotypes_with_phenotype)
 
 #' Remove SNPs with unknown locaton
-genotypes_no_chr0 <- plink('--not-chr', 0, infile = genotypes_complete)
+genotypes_no_chr0 <- plink('--not-chr', 0, infile = genotypes_with_phenotype)
+sample_stats(genotypes_with_phenotype, genotypes_no_chr0)
 
 #' Plot missinges
 missingnes <- function (genotypes) {
@@ -70,17 +91,21 @@ missingnes <- function (genotypes) {
 missing_per_sample <- missingnes(plink('--missing', infile=genotypes_no_chr0))
 
 #' Drop failed plate #16
-genotypes_no_plate_16 <- plink('--remove', to_file(subset(phenotype, PLATE == 16, select=c('FAMILY_ID', 'OMICRON_ID'))), infile=genotypes)
+genotypes_no_plate_16 <- plink('--remove', to_file(subset(phenotype, PLATE == 16, select=c('FAMILY_ID', 'OMICRON_ID'))), infile=genotypes_no_chr0)
+sample_stats(genotypes_no_chr0, genotypes_no_plate_16)
 
 #' Drop failed arrays
+# TODO remove - does not remove any arrays
 mean_missingnes <- ddply(missing_per_sample, .(ARRAY_ID), summarize, mean=mean(F_MISS))
 genotypes_no_failures <- plink('--remove', to_file(subset(phenotype, ARRAY_ID %in% mean_missingnes[mean_missingnes$mean > 0.5, 1], select=c('FAMILY_ID', 'OMICRON_ID'))), infile=genotypes_no_plate_16)
+sample_stats(genotypes_no_plate_16, genotypes_no_failures)
 
 #' Plot missinges after removing replicates
 invisible(missingnes(plink('--missing', infile=genotypes_no_failures)))
 
 #' Filter by missingnes per subject
 genotypes_mind_1pct <- plink('--mind', '0.01', infile=genotypes_no_failures)
+sample_stats(genotypes_no_failures, genotypes_mind_1pct)
 
 #' Sex check
 genotypes <- plink('--merge-x', infile=genotypes_mind_1pct)
@@ -110,7 +135,7 @@ qplot(WELL_COL, WELL_ROW, fill=factor(STATUS), facets = ~PLATE, data=sex_check, 
 
 #' Sex check on replicates
 replicates <- subset(phenotype, grepl('.*_.*', phenotype$OMICRON_ID), select=c('FAMILY_ID', 'OMICRON_ID'))
-genotypes <- plink('--keep', to_file(replicates), infile=updated_genotypes)
+genotypes <- plink('--keep', to_file(replicates), infile=genotypes_mind_1pct)
 genotypes <- plink('--merge-x', infile=genotypes)
 genotypes <- plink('--split-x', 'hg19', infile=genotypes)
 genotypes <- plink('--check-sex', infile=genotypes)
@@ -125,24 +150,21 @@ sum(!sex_check_reproducibility$V1)
 sex_check_reproducibility_failed <- replicates_sex_check[replicates_sex_check$SAMPLE_ID %in% subset(sex_check_reproducibility, V1==F)$SAMPLE_ID,1:6]
 sex_check_reproducibility_failed
 
-# TODO fixme
-# #' Plot B allele frequency for samples flagged by replicate sex check
-# xy_b_allele_freq <- subset(xy_b_allele, Sample.ID %in% sex_check_reproducibility_failed$IID)
-# xy_b_allele_freq <- merge(xy_b_allele_freq, replicates_sex_check[,c('IID', 'PEDSEX', 'SAMPLE_ID')], by.x='Sample.ID', by.y='IID', all.x=T)
-# #+ fig.height=10
-# qplot(Position, B.Allele.Freq, data=xy_b_allele_freq, geom='point') + facet_grid(Sample.ID + SAMPLE_ID  ~ Chr, scales = 'free', space='free')
-
 #' Drop all samples flagged by sex check
-genotypes_no_sex_errors <- plink('--remove', to_file(subset(sex_check, STATUS=='PROBLEM', select=c(FAMILY_ID, IID))), infile=prefiltered_genotypes)
+genotypes_no_sex_errors <- plink('--remove', to_file(subset(sex_check, STATUS=='PROBLEM', select=c(FAMILY_ID, IID))), infile=genotypes_mind_1pct)
+sample_stats(genotypes_mind_1pct, genotypes_no_sex_errors)
 
 #' Drop chr >= 23
 genotypes_autosomes <- plink('--chr', '1-22', infile = genotypes_no_sex_errors)
+sample_stats(genotypes_no_sex_errors, genotypes_autosomes)
 
 #' Analyze heterozygosity
 genotypes <- plink('--het', infile=genotypes_autosomes)
 heterozygosity <- read.table(paste(genotypes, 'het', sep='.'), header = T)
-heterozygosity$H <- heterozygosity$O/heterozygosity$N*100
-qplot(H, data=heterozygosity)
+heterozygosity$H <- heterozygosity$O.HOM/heterozygosity$N.NM*100
+qplot(H, data=heterozygosity) +
+  geom_vline(xintercept=mean(heterozygosity$H)+2*sd(heterozygosity$H), color='red') +
+  geom_vline(xintercept=mean(heterozygosity$H)-2*sd(heterozygosity$H), color='red')
 # TODO remove samples with extreme heterozygosity
 
 #' Remove replicates by missingnes
@@ -150,7 +172,9 @@ genotypes <- plink('--missing', infile=genotypes_autosomes)
 missing_per_sample <- read.table(paste(genotypes, 'imiss', sep='.'), header = T)
 missing_per_sample <- merge(missing_per_sample, phenotype, by.x='IID', by.y='OMICRON_ID', all.x=T)
 replicates_to_remove <- ddply(subset(missing_per_sample, grepl('.*_.*', missing_per_sample$IID)), .(SAMPLE_ID), function (df){ df[order(df$F_MISS)[2:nrow(df)], c('FAMILY_ID', 'IID')] })[,2:3]
-genotypes_unique <- plink('--remove', to_file(replicates_to_remove), infile=updated_genotypes)
+replicates_to_remove <- replicates_to_remove[complete.cases(replicates_to_remove),]
+genotypes_unique <- plink('--remove', to_file(replicates_to_remove), infile=genotypes_autosomes)
+sample_stats(genotypes_autosomes, genotypes_unique)
 
 #' KING wrapper
 king_path <- '/usr/bin/king'
@@ -176,15 +200,19 @@ qplot(seq_along(Kinship), Kinship, data=kinship[['family']]) +
 # Cryptic duplicates
 subset(kinship[['family']], Kinship == 0.5)
 
+# TODO remove cryptic duplicates
+
 #' Filter by missingnes per marker
-genotypes <- plink('--geno', '0.5', infile=genotypes)
+genotypes_geno_05 <- plink('--geno', '0.05', infile=genotypes_unique)
+sample_stats(genotypes_unique, genotypes_geno_05)
 
 # TODO filter by geno & maf!
 #' HWE filtering
-genotypes <- plink('--hwe', '1e-5', infile=genotypes)
+# genotypes <- plink('--hwe', '1e-5', infile=genotypes)
 
 #' MAF fitering
-genotypes <- plink('--maf', '0.01', infile=genotypes)
+genotypes_maf_01 <- plink('--maf', '0.01', infile=genotypes_geno_05)
+sample_stats(genotypes_geno_05, genotypes_maf_01)
 
 #' # Population structure
 convertf_path <- '/usr/bin/convertf'
