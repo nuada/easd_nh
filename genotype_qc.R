@@ -191,7 +191,7 @@ convertf_path <- '/usr/bin/convertf'
 smartpca_path <- '/usr/bin/smartpca'
 
 #' Extract HapMap SNPs
-hapmap_snps <- plink('--extract', paste(resources_dir, 'hapmap3', 'hapmap3r2_CEU.CHB.JPT.YRI.no-at-cg-snps.txt', sep='/'), infile=genotypes)
+hapmap_snps <- plink('--extract', paste(resources_dir, 'hapmap3', 'hapmap3r2_CEU.CHB.JPT.YRI.no-at-cg-snps.txt', sep='/'), infile=genotypes_maf_01)
 
 #' LD pruning
 genotypes_pruned <- plink('--exclude', paste(resources_dir, 'high_ld_hg19.txt', sep='/'), '--range', '--indep-pairwise 50 5 0.2', infile=hapmap_snps)
@@ -221,14 +221,14 @@ system(paste(plink_path, '--noweb', '--bfile', genotypes_with_hapmap_3, '--recod
 # Setup convertf
 convertf_params <- tempfile(tmpdir = temp_dir)
 eigenstrat_input <- tempfile(tmpdir = temp_dir)
-cat(paste0('genotypename:    ', genotypes_merged, '.ped'), file=convertf_params)
-cat(paste0('snpname:         ', genotypes_merged, '.map'), file=convertf_params, append = T)
-cat(paste0('indivname:       ', genotypes_merged, '.ped'), file=convertf_params, append = T)
-cat('outputformat:    EIGENSTRAT', file=convertf_params, append = T)
-cat(paste0('genotypeoutname: ', eigenstrat_input, '.eigenstratgeno'), file=convertf_params, append = T)
-cat(paste0('snpoutname:      ', eigenstrat_input, '.snp'), file=convertf_params, append = T)
-cat(paste0('indivoutname:    ', eigenstrat_input, '.ind'), file=convertf_params, append = T)
-cat('familynames:     NO', file=convertf_params, append = T)
+cat(paste0('genotypename:    ', genotypes_merged, '.ped\n'), file=convertf_params)
+cat(paste0('snpname:         ', genotypes_merged, '.map\n'), file=convertf_params, append = T)
+cat(paste0('indivname:       ', genotypes_merged, '.ped\n'), file=convertf_params, append = T)
+cat('outputformat:    EIGENSTRAT\n', file=convertf_params, append = T)
+cat(paste0('genotypeoutname: ', eigenstrat_input, '.eigenstratgeno\n'), file=convertf_params, append = T)
+cat(paste0('snpoutname:      ', eigenstrat_input, '.snp\n'), file=convertf_params, append = T)
+cat(paste0('indivoutname:    ', eigenstrat_input, '.ind\n'), file=convertf_params, append = T)
+cat('familynames:     NO\n', file=convertf_params, append = T)
 
 # Convert PED/MAP to EIGENSTRAT
 system(paste(convertf_path, '-p', convertf_params))
@@ -237,21 +237,25 @@ system(paste(convertf_path, '-p', convertf_params))
 smartcpa_params <- tempfile(tmpdir = temp_dir)
 eigenstrat_output <- tempfile(tmpdir = temp_dir)
 
-cat(paste0('genotypename: ', eigenstrat_input, '.eigenstratgeno'), file=smartcpa_params)
-cat(paste0('snpname:      ', eigenstrat_input, '.snp'), file=smartcpa_params, append = T)
-cat(paste0('indivname:    ', eigenstrat_input, '.ind'), file=smartcpa_params, append = T)
-cat(paste0('evecoutname:  ', eigenstrat_output, '.evec'), file=smartcpa_params, append = T)
-cat(paste0('evaloutname:  ', eigenstrat_output, '.eval'), file=smartcpa_params, append = T)
-cat('altnormstyle: NO', file=smartcpa_params, append = T)
-cat('numoutevec:     10', file=smartcpa_params, append = T)
-cat('numoutlieriter: 0', file=smartcpa_params, append = T)
-cat('numoutlierevec: 2', file=smartcpa_params, append = T)
-cat('outliersigmathresh: 8.0', file=smartcpa_params, append = T)
-cat('qtmode: 0', file=smartcpa_params, append = T)
-cat('nsnpldregress: 2', file=smartcpa_params, append = T)
-cat(paste0('evaloutname:  ', eigenstrat_output, '.outlier'), file=smartcpa_params, append = T)
+cat(paste0('genotypename: ', eigenstrat_input, '.eigenstratgeno\n'), file=smartcpa_params)
+cat(paste0('snpname:      ', eigenstrat_input, '.snp\n'), file=smartcpa_params, append = T)
+cat(paste0('indivname:    ', eigenstrat_input, '.ind\n'), file=smartcpa_params, append = T)
+cat(paste0('evecoutname:  ', eigenstrat_output, '.evec\n'), file=smartcpa_params, append = T)
+cat(paste0('evaloutname:  ', eigenstrat_output, '.eval\n'), file=smartcpa_params, append = T)
+cat('altnormstyle: NO\n', file=smartcpa_params, append = T)
+cat('numoutevec:     10\n', file=smartcpa_params, append = T)
+cat('numoutlieriter: 0\n', file=smartcpa_params, append = T)
+cat('numoutlierevec: 2\n', file=smartcpa_params, append = T)
+cat('outliersigmathresh: 8.0\n', file=smartcpa_params, append = T)
+cat('qtmode: 0\n', file=smartcpa_params, append = T)
+cat('nsnpldregress: 2\n', file=smartcpa_params, append = T)
+# cat(paste0('evaloutname:  ', eigenstrat_output, '.outlier\n'), file=smartcpa_params, append = T)
 
 # Run smartpca
-system(paste(smartpca_path, '-p', smartpca_params))
+system(paste(smartpca_path, '-p', smartcpa_params))
 
-# TODO plot pop pca
+population_structure <- read.table(paste0(eigenstrat_output, '.evec'), header = F, skip=1)
+names(population_structure) <- c('IID', paste0('PC', 1:10), 'group')
+# TODO relabel groups
+qplot(PC1, PC2, color=group, data=population_structure)
+# TODO write population structure to file?
