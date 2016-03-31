@@ -44,6 +44,7 @@
         - git
         - ipython
         - lbzip2
+        - libssl-dev
         - openjdk-7-jdk
         - openjdk-7-jre-headless
         - plink
