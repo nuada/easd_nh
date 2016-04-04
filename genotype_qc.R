@@ -284,6 +284,15 @@ system(paste(smartpca_path, '-p', smartcpa_params))
 
 population_structure <- read.table(paste0(eigenstrat_output, '.evec'), header = F, skip=1)
 names(population_structure) <- c('IID', paste0('PC', 1:10), 'group')
-# TODO relabel groups
-qplot(PC1, PC2, color=group, data=population_structure)
-# TODO write population structure to file?
+
+#' Add group labels from HapMap3
+relationships_w_pops <- read.table(paste(resources_dir, 'hapmap3', 'relationships_w_pops_121708.txt', sep='/'), header = T)
+relationships_w_pops <- relationships_w_pops[,c(2,7)]
+population_structure <- merge(population_structure, relationships_w_pops, by='IID', all.x=T)
+population_structure$population <- as.character(population_structure$population)
+population_structure[is.na(population_structure$population),'population'] <- 'EASD'
+population_structure$population <- factor(population_structure$population)
+population_structure <- subset(population_structure, select=-group)
+
+#' Population structure PC1 vs PC2
+qplot(PC1, PC2, color=population, data=population_structure)
