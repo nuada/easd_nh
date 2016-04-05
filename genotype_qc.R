@@ -202,17 +202,27 @@ subset(kinship[['family']], Kinship == 0.5)
 
 # TODO remove cryptic duplicates
 
-#' Filter by missingnes per marker
-genotypes_geno_05 <- plink('--geno', '0.05', infile=genotypes_unique)
-sample_stats(genotypes_unique, genotypes_geno_05)
+#' Filter by missingnes per marker and MAF
+#' * maf >  0.1  -> geno 0.05
+#' * maf <= 0.1  -> geno 0.03
+#' * maf <= 0.05 -> geno 0.01
+genotypes_maf_lt_01 <- plink('--maf', '0.1', '--geno', '0.05', infile=genotypes_unique)
+sample_stats(genotypes_unique, genotypes_maf_lt_01)
+genotypes_maf_gt_01 <- plink('--max-maf', '0.1', '--geno', '0.03', infile=genotypes_unique)
+sample_stats(genotypes_unique, genotypes_maf_gt_01)
+genotypes_maf_gt_005 <- plink('--max-maf', '0.05', '--geno', '0.01', infile=genotypes_unique)
+sample_stats(genotypes_unique, genotypes_maf_gt_005)
 
-# TODO filter by geno & maf!
+genotypes_maf_geno_filtered <- plink('--merge-list', to_file(c(genotypes_maf_gt_01, genotypes_maf_gt_005)), infile=genotypes_maf_lt_01)
+sample_stats(genotypes_unique, genotypes_maf_geno_filtered)
+
 #' HWE filtering
-# genotypes <- plink('--hwe', '1e-5', infile=genotypes)
+genotypes_hwe_filtered <- plink('--hwe', '1e-5', infile=genotypes_maf_geno_filtered)
+sample_stats(genotypes_maf_geno_filtered, genotypes_hwe_filtered)
 
 #' MAF fitering
-genotypes_maf_01 <- plink('--maf', '0.01', infile=genotypes_geno_05)
-sample_stats(genotypes_geno_05, genotypes_maf_01)
+genotypes_maf_01 <- plink('--maf', '0.01', infile=genotypes_hwe_filtered)
+sample_stats(genotypes_hwe_filtered, genotypes_maf_01)
 
 #' # Population structure
 convertf_path <- '/usr/bin/convertf'
