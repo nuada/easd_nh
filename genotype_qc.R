@@ -121,18 +121,6 @@ qplot(seq_along(F), F, color=factor(STATUS), data=sex_check) + geom_hline(yinter
 qplot(ARRAY_COL, ARRAY_ROW, fill=factor(STATUS), facets = ~ARRAY_ID, data=sex_check, geom='tile') + ggtitle('Sex check per sample vs location by array')
 qplot(WELL_COL, WELL_ROW, fill=factor(STATUS), facets = ~PLATE, data=sex_check, geom='tile') + ggtitle('Sex check per sample vs location by plate')
 
-# TODO load this data from beeline final report!
-# #' Plot probes intensities on X and Y chromosomes
-# xy_snps <- read.csv(pipe("tail -n +9 /resources/arrays/HumanCore-12-v1/HumanCore-12-v1-0-B.csv | awk -F , '$10 == \"X\" || $10 == \"Y\"' | cut -d , -f 2,10,11"), header=F)
-# names(xy_snps) <- c('name', 'chr', 'position')
-#
-# TODO fixme
-# xy_b_allele_freq <- read.csv(pipe(paste("zcat", paste(genotype_dir, 'easd_nh_final_report.txt_Final.csv.gz', sep='/'), "| tail -n +9 | cut -d , -f 1,2,4,10,11")), header=T)
-# mean_xy_intensity <- ddply(xy_b_allele, .(Sample.ID, Chr), summarize, mean=mean(Y, na.rm = T))
-# mean_xy_intensity <- merge(mean_xy_intensity, sex_check, by.x='Sample.ID', by.y='IID')
-# library(reshape2)
-# qplot(X, Y, color=STATUS, data=dcast(mean_xy_intensity, Sample.ID + STATUS + SNPSEX + COUNTRY ~ Chr, value.var = 'mean'), geom='point')
-
 #' Sex check on replicates
 replicates <- subset(phenotype, grepl('.*_.*', phenotype$OMICRON_ID), select=c('FAMILY_ID', 'OMICRON_ID'))
 genotypes <- plink('--keep', to_file(replicates), infile=genotypes_mind_1pct)
